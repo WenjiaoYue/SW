@@ -17,6 +17,7 @@
 
   let canvas: HTMLCanvasElement;
   let radarChartInstance: Chart | null = null;
+  let previousShowDetail = false;
 
   Chart.register(...registerables);
 
@@ -40,71 +41,78 @@
     showModelDetail.update((v) => !v);
   }
 
-  onMount(() => {
-    // Use setTimeout to ensure the canvas is properly rendered in the DOM
-    setTimeout(() => {
-      if (!canvas) {
-        console.error('Canvas element not found');
-        return;
-      }
+  function initializeChart() {
+    if (!canvas) {
+      console.error('Canvas element not found');
+      return;
+    }
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        console.error('Canvas context not found');
-        return;
-      }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error('Canvas context not found');
+      return;
+    }
 
-      radarChartInstance = new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: ['Performance', 'Accuracy', 'XPU Ready', 'Memory Eff.', 'Context'],
-          datasets: [
-            {
-              label: 'Score',
-              data: selectedModel.score,
-              backgroundColor: selectedModel.color + '33',
-              borderColor: selectedModel.color,
-              pointBackgroundColor: selectedModel.color,
-              borderWidth: 2,
-              pointBorderWidth: 2,
-              pointRadius: 4
-            }
-          ]
+    // Destroy existing chart if it exists
+    if (radarChartInstance) {
+      radarChartInstance.destroy();
+      radarChartInstance = null;
+    }
+
+    radarChartInstance = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['Performance', 'Accuracy', 'XPU Ready', 'Memory Eff.', 'Context'],
+        datasets: [
+          {
+            label: 'Score',
+            data: selectedModel.score,
+            backgroundColor: selectedModel.color + '33',
+            borderColor: selectedModel.color,
+            pointBackgroundColor: selectedModel.color,
+            borderWidth: 2,
+            pointBorderWidth: 2,
+            pointRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            beginAtZero: true,
+            angleLines: { color: '#e2e8f0' },
+            grid: { color: '#e2e8f0' },
+            pointLabels: {
+              color: '#64748b',
+              font: { size: 11, weight: '600' as const }
+            },
+            ticks: {
+              display: false,
+              stepSize: 20
+            },
+            min: 0,
+            max: 100
+          }
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              beginAtZero: true,
-              angleLines: { color: '#e2e8f0' },
-              grid: { color: '#e2e8f0' },
-              pointLabels: {
-                color: '#64748b',
-                font: { size: 11, weight: '600' as const }
-              },
-              ticks: {
-                display: false,
-                stepSize: 20
-              },
-              min: 0,
-              max: 100
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              enabled: true,
-              callbacks: {
-                label: function(context) {
-                  return context.label + ': ' + context.parsed.r + '%';
-                }
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: function(context) {
+                return context.label + ': ' + context.parsed.r + '%';
               }
             }
           }
         }
-      });
-    }, 100);
+      }
+    });
+  }
+
+  onMount(() => {
+    setTimeout(initializeChart, 100);
 
     return () => {
       if (radarChartInstance) {
@@ -112,6 +120,12 @@
       }
     };
   });
+
+  // Reinitialize chart when returning from detail view
+  $: if (previousShowDetail && !$showModelDetail) {
+    setTimeout(initializeChart, 100);
+  }
+  $: previousShowDetail = $showModelDetail;
 
   $: if (radarChartInstance && selectedModel) {
     radarChartInstance.data.datasets[0].data = selectedModel.score;

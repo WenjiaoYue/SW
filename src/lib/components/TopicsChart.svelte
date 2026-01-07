@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Chart, registerables } from 'chart.js';
   import { commitFilter } from '$lib/stores/appStore';
+  import { repoData } from '$lib/stores/dataStore';
   import { CHART_COLORS, CHART_BORDERS } from '$lib/data/constants';
 
   let canvas: HTMLCanvasElement;
@@ -9,20 +10,43 @@
 
   Chart.register(...registerables);
 
-  onMount(() => {
+  function initChart() {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+
+    const defaultData = {
+      labels: ['Pallas', 'ROCm', 'Inductor', 'Dynamo', 'DTensor'],
+      data: [15, 8, 10, 8, 6]
+    };
+
+    let chartLabels = defaultData.labels;
+    let chartData = defaultData.data;
+
+    if ($repoData?.topics && $repoData.topics.length > 0) {
+      const sortedTopics = [...$repoData.topics]
+        .sort((a, b) => b.commit_count - a.commit_count)
+        .slice(0, 5);
+
+      if (sortedTopics.length > 0) {
+        chartLabels = sortedTopics.map(topic => topic.name);
+        chartData = sortedTopics.map(topic => topic.commit_count);
+      }
+    }
+
     chartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: ['Pallas', 'ROCm', 'Inductor', 'Dynamo', 'DTensor'],
+        labels: chartLabels,
         datasets: [
           {
             label: 'Commits',
-            data: [15, 8, 10, 8, 6],
+            data: chartData,
             backgroundColor: CHART_COLORS,
             borderColor: CHART_BORDERS,
             borderWidth: 1,
@@ -69,6 +93,10 @@
         }
       }
     });
+  }
+
+  onMount(() => {
+    initChart();
 
     return () => {
       if (chartInstance) {
@@ -76,6 +104,10 @@
       }
     };
   });
+
+  $: if (chartInstance && $repoData) {
+    initChart();
+  }
 </script>
 
 <div class="chart-wrapper h-[260px] relative w-full">

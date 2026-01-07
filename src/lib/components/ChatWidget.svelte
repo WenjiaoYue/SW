@@ -8,14 +8,42 @@
     repoChatMessages,
     modelChatMessages,
     selectedModelKey,
+    currentProject,
     type ChatMessage
   } from '$lib/stores/appStore';
+  import { repoData, isLoadingData, dataError } from '$lib/stores/dataStore';
+  import { fetchGitHubTopics } from '$lib/services/api';
   import { marked } from 'marked';
   import { get } from 'svelte/store';
 
   let chatInput = '';
+  let previousProject = '';
 
   $: currentMessages = $currentView === 'repo' ? $repoChatMessages : $modelChatMessages;
+
+  $: if ($currentProject && $currentProject !== previousProject && $currentView === 'repo') {
+    previousProject = $currentProject;
+    fetchRepoData($currentProject, 7);
+  }
+
+  async function fetchRepoData(repo: string, days: number = 7) {
+    isLoadingData.set(true);
+    dataError.set(null);
+
+    try {
+      const data = await fetchGitHubTopics({ repo, days, max_commits: 10 });
+      console.log('data ---1', data);
+      
+      repoData.set(data);
+      return data;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to fetch data';
+      dataError.set(errorMsg);
+      throw error;
+    } finally {
+      isLoadingData.set(false);
+    }
+  }
 
   function toggleChatDock() {
     chatDockOpen.update(v => !v);
@@ -25,7 +53,7 @@
     chatExpanded.update(v => !v);
   }
 
-  function sendMessage() {
+  async function sendMessage() {
     if (!chatInput.trim()) return;
 
     if (!$chatExpanded) {
@@ -39,26 +67,49 @@
     if ($currentView === 'repo') {
       repoChatMessages.update(msgs => [...msgs, userMessage]);
 
-      setTimeout(() => {
-        let reply = 'Processing...';
-        if (userMessageText.includes('pallas')) {
-          commitFilter.set('Pallas');
-          reply = 'Filtered View: **Pallas Backend** commits.';
-        } else if (userMessageText.includes('rocm')) {
-          commitFilter.set('ROCm');
-          reply = 'Filtered View: **ROCm** commits.';
-        } else if (userMessageText.includes('inductor')) {
-          commitFilter.set('Inductor');
-          reply = 'Filtered View: **Inductor** commits.';
-        } else if (userMessageText.includes('reset') || userMessageText.includes('all')) {
-          commitFilter.set('All');
-          reply = 'Showing **all commits**.';
-        } else {
-          reply = 'I can help you filter commits. Try asking about "Pallas", "ROCm", or "Inductor".';
-        }
+      if (userMessageText.includes('fetch') || userMessageText.includes('load') || userMessageText.includes('update')) {
+        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Fetching latest data from GitHub...' }]);
 
-        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: reply }]);
-      }, 500);
+        try {
+          const currentRepo = get(currentProject);
+          const data = await fetchRepoData(currentRepo, 7);
+
+          const topicsCount = data.topics?.length || 0;
+          const commitsCount = data.commits?.length || 0;
+
+          const reply = `Successfully loaded **${commitsCount} commits** and identified **${topicsCount} hot topics** from **${data.repo}**.\n\nKey topics: ${data.topics.map(t => t.name).join(', ')}`;
+
+          repoChatMessages.update(msgs => {
+            const newMsgs = [...msgs];
+            newMsgs[newMsgs.length - 1] = { type: 'bot', content: reply };
+            return newMsgs;
+          });
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Failed to fetch data';
+          repoChatMessages.update(msgs => {
+            const newMsgs = [...msgs];
+            newMsgs[newMsgs.length - 1] = { type: 'bot', content: `Error: ${errorMsg}` };
+            return newMsgs;
+          });
+        }
+      } else if (userMessageText.includes('pallas')) {
+        commitFilter.set('Pallas');
+        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Filtered View: **Pallas Backend** commits.' }]);
+      } else if (userMessageText.includes('rocm')) {
+        commitFilter.set('ROCm');
+        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Filtered View: **ROCm** commits.' }]);
+      } else if (userMessageText.includes('inductor')) {
+        commitFilter.set('Inductor');
+        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Filtered View: **Inductor** commits.' }]);
+      } else if (userMessageText.includes('reset') || userMessageText.includes('all')) {
+        commitFilter.set('All');
+        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Showing **all commits**.' }]);
+      } else {
+        repoChatMessages.update(msgs => [...msgs, {
+          type: 'bot',
+          content: 'I can help you:\n- **Fetch data**: "fetch latest data"\n- **Filter commits**: "show pallas", "rocm commits"\n- **Reset filter**: "show all"'
+        }]);
+      }
     } else {
       modelChatMessages.update(msgs => [...msgs, userMessage]);
 

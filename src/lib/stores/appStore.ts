@@ -8,7 +8,7 @@ export interface ChatMessage {
 }
 
 export const currentView = writable<ViewType>('repo');
-export const currentProject = writable('PyTorch / core');
+export const currentProject = writable('pytorch/pytorch');
 export const chatDockOpen = writable(false);
 export const chatExpanded = writable(false);
 export const selectedModelKey = writable('DeepSeek');
@@ -18,7 +18,7 @@ export const commitFilter = writable<string>('All');
 export const repoChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
-    content: "Hello! I'm monitoring PyTorch commits. Click the chart to filter commits."
+    content: "Hello! I can help you analyze GitHub repositories.\n\nTry: **fetch latest data** to load commits and topics."
   }
 ]);
 

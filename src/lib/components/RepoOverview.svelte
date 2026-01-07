@@ -4,6 +4,7 @@
   import TopicsChart from './TopicsChart.svelte';
   import CommitTable from './CommitTable.svelte';
   import PRTable from './PRTable.svelte';
+  import { repoData } from '$lib/stores/dataStore';
   import { HOT_TOPICS_MD } from '$lib/data/constants';
 
   let activeTab: 'report' | 'chart' = 'report';
@@ -12,7 +13,8 @@
     activeTab = tab;
   }
 
-  const renderedMarkdown = marked.parse(HOT_TOPICS_MD);
+  $: summaryText = $repoData?.summary || HOT_TOPICS_MD;
+  $: renderedMarkdown = marked.parse(summaryText);
 </script>
 
 <div class="space-y-6 max-w-[1400px] mx-auto transition-opacity duration-300">

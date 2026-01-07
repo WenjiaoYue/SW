@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ChevronDown, Radar } from 'lucide-svelte';
   import { currentView, currentProject } from '$lib/stores/appStore';
+  import { PROJECTS } from '$lib/data/constants';
 
   let projectMenuOpen = false;
 
@@ -8,8 +9,8 @@
     projectMenuOpen = !projectMenuOpen;
   }
 
-  function selectProject(name: string) {
-    currentProject.set(name);
+  function selectProject(fullName: string) {
+    currentProject.set(fullName);
     projectMenuOpen = false;
   }
 
@@ -19,6 +20,8 @@
       projectMenuOpen = false;
     }
   }
+
+  $: currentProjectName = PROJECTS.find(p => p.fullName === $currentProject)?.name || $currentProject;
 </script>
 
 <svelte:window on:click={handleClickOutside} />
@@ -35,28 +38,27 @@
           class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none"
         >
           <span class="text-xs text-slate-400 font-medium uppercase">Project</span>
-          <span class="font-bold text-slate-800 text-sm">{$currentProject}</span>
+          <span class="font-bold text-slate-800 text-sm">{currentProjectName}</span>
           <ChevronDown class="w-3 h-3 text-slate-600 mt-0.5" />
         </button>
 
         <div
-          class="dropdown-menu absolute top-full left-0 mt-2 w-60 bg-white rounded-xl shadow-lg border border-slate-200 p-1.5 z-50"
+          class="dropdown-menu absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-slate-200 p-1.5 z-50"
           class:open={projectMenuOpen}
         >
-          <button
-            on:click={() => selectProject('PyTorch / core')}
-            class="w-full text-left px-3 py-2 text-sm text-slate-800 hover:bg-slate-50 rounded-lg flex items-center gap-2"
-          >
-            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-            PyTorch Core
-          </button>
-          <button
-            on:click={() => selectProject('vLLM / vllm')}
-            class="w-full text-left px-3 py-2 text-sm text-slate-800 hover:bg-slate-50 rounded-lg flex items-center gap-2"
-          >
-            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-            vLLM Project
-          </button>
+          {#each PROJECTS as project, idx}
+            <button
+              on:click={() => selectProject(project.fullName)}
+              class="w-full text-left px-3 py-2 text-sm text-slate-800 hover:bg-slate-50 rounded-lg flex items-center gap-2 transition-colors"
+              class:bg-slate-100={$currentProject === project.fullName}
+            >
+              <div class="w-2 h-2 rounded-full" class:bg-orange-500={idx === 0} class:bg-blue-500={idx === 1} class:bg-green-500={idx === 2}></div>
+              <div class="flex flex-col">
+                <span class="font-medium">{project.name}</span>
+                <span class="text-xs text-slate-500">{project.fullName}</span>
+              </div>
+            </button>
+          {/each}
         </div>
       </div>
     </div>
