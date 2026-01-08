@@ -36,18 +36,32 @@ export interface Commit {
   commit_info: CommitInfo;
 }
 
+export interface PullRequest {
+  number: number;
+  title: string;
+  url: string;
+  author: string;
+  created_at: string;
+  merged_at: string | null;
+  state: string;
+  labels: string[];
+  body: string;
+  diff_summary: any;
+  hardware: string;
+  types: string[];
+  reasoning: string;
+}
+
 export interface APIResponse {
   repo: string;
   days: number;
   summary: string;
   topics: Topic[];
   commits: Commit[];
-  pr_analysis?: any[];
+  prs_analysis?: PullRequest[];
 }
 
 export async function fetchGitHubTopics(request: TopicRequest): Promise<APIResponse> {
-  console.log('github-hot-topics');
-  
   const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/github-hot-topics`;
 
   const response = await fetch(apiUrl, {

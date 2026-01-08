@@ -233,5 +233,5 @@ Recent development activity focused on **partitioner hook improvements** for cus
       }
     }
   ],
-  pr_analysis: []
+  prs_analysis: []
 };

@@ -15,6 +15,7 @@
 
   $: summaryText = $repoData?.summary || HOT_TOPICS_MD;
   $: renderedMarkdown = marked.parse(summaryText);
+  $: pullRequests = $repoData?.prs_analysis || [];
 </script>
 
 <div class="space-y-6 max-w-[1400px] mx-auto transition-opacity duration-300">
@@ -67,5 +68,5 @@
     <CommitTable />
   </div>
 
-  <PRTable />
+  <PRTable prs={pullRequests} />
 </div>
