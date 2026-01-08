@@ -1,11 +1,11 @@
-# AI DevOS - Workspace
+# AI DevAgents - Workspace
 
 A modern developer operations dashboard built with Svelte, TypeScript, Vite, and Tailwind CSS.
 
 ## Features
 
 - **Repo Overview**: Visualize commit activity, analyze pull requests, and track development focus areas
-- **Model Radar**: Evaluate AI model compatibility with detailed metrics and radar charts
+- **HuggingFace Model**: Evaluate AI model compatibility with detailed metrics and radar charts
 - **Interactive Charts**: Built with Chart.js for dynamic data visualization
 - **AI Chat Assistant**: Built-in chat widget for querying repository data
 - **Responsive Design**: Fully responsive layout with Tailwind CSS

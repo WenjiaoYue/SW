@@ -1,6 +1,6 @@
 import { writable, derived } from 'svelte/store';
 
-export type ViewType = 'repo' | 'model';
+export type ViewType = 'repo' | 'model' | 'triton';
 
 export interface ChatMessage {
   type: 'bot' | 'user';

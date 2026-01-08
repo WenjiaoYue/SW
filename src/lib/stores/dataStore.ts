@@ -1,6 +1,5 @@
 import { writable } from 'svelte/store';
 import type { APIResponse } from '$lib/services/api';
-import { MOCK_API_RESPONSE } from '$lib/data/constants';
 
 export interface TopicData {
   id: string;
@@ -19,6 +18,7 @@ export interface CommitData {
   url: string;
 }
 
-export const repoData = writable<APIResponse | null>(MOCK_API_RESPONSE as APIResponse);
+export const repoData = writable<APIResponse | null>(null);
 export const isLoadingData = writable(false);
 export const dataError = writable<string | null>(null);
+export const cachedRepoData = writable<Map<string, APIResponse>>(new Map());

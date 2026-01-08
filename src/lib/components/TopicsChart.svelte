@@ -66,13 +66,19 @@
             grid: {
               color: '#e2e8f0'
             },
-            ticks: { color: '#94a3b8' }
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 11 }
+            }
           },
           x: {
             grid: { display: false },
             ticks: {
               color: '#64748b',
-              font: { weight: '600' as const }
+              font: {
+                weight: '600' as const,
+                size: 11
+              }
             }
           }
         },

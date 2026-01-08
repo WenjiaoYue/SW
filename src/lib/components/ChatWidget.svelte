@@ -11,7 +11,7 @@
     currentProject,
     type ChatMessage
   } from '$lib/stores/appStore';
-  import { repoData, isLoadingData, dataError } from '$lib/stores/dataStore';
+  import { repoData, isLoadingData, dataError, cachedRepoData } from '$lib/stores/dataStore';
   import { fetchGitHubTopics } from '$lib/services/api';
   import { marked } from 'marked';
   import { get } from 'svelte/store';
@@ -21,20 +21,38 @@
 
   $: currentMessages = $currentView === 'repo' ? $repoChatMessages : $modelChatMessages;
 
-  $: if ($currentProject && $currentProject !== previousProject && $currentView === 'repo') {
+  $: if ($currentProject && $currentProject !== previousProject) {
     previousProject = $currentProject;
-    fetchRepoData($currentProject, 7);
+    if ($currentView === 'repo') {
+      loadCachedOrFetchData($currentProject, 7);
+    }
   }
 
-  async function fetchRepoData(repo: string, days: number = 7) {
+  async function loadCachedOrFetchData(repo: string, days: number = 7) {
+    const cacheKey = `${repo}_${days}`;
+    const cache = get(cachedRepoData);
+
+    if (cache.has(cacheKey)) {
+      repoData.set(cache.get(cacheKey)!);
+    } else {
+      await fetchRepoData(repo, days, false);
+    }
+  }
+
+  async function fetchRepoData(repo: string, days: number = 7, forceRefresh: boolean = true) {
     isLoadingData.set(true);
     dataError.set(null);
 
     try {
       const data = await fetchGitHubTopics({ repo, days, max_commits: 10 });
-      console.log('data ---1', data);
-      
       repoData.set(data);
+
+      const cacheKey = `${repo}_${days}`;
+      cachedRepoData.update(cache => {
+        cache.set(cacheKey, data);
+        return cache;
+      });
+
       return data;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to fetch data';
@@ -66,49 +84,48 @@
 
     if ($currentView === 'repo') {
       repoChatMessages.update(msgs => [...msgs, userMessage]);
+      repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Fetching latest data from GitHub...' }]);
 
-      if (userMessageText.includes('fetch') || userMessageText.includes('load') || userMessageText.includes('update')) {
-        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Fetching latest data from GitHub...' }]);
+      try {
+        const currentRepo = get(currentProject);
+        const data = await fetchRepoData(currentRepo, 7, true);
 
-        try {
-          const currentRepo = get(currentProject);
-          const data = await fetchRepoData(currentRepo, 7);
+        const topicsCount = data.topics?.length || 0;
+        const commitsCount = data.commits?.length || 0;
+        const prsCount = data.prs_analysis?.length || 0;
 
-          const topicsCount = data.topics?.length || 0;
-          const commitsCount = data.commits?.length || 0;
+        let reply = `Successfully loaded **${commitsCount} commits**, **${topicsCount} hot topics**, and **${prsCount} pull requests** from **${data.repo}**.`;
 
-          const reply = `Successfully loaded **${commitsCount} commits** and identified **${topicsCount} hot topics** from **${data.repo}**.\n\nKey topics: ${data.topics.map(t => t.name).join(', ')}`;
-
-          repoChatMessages.update(msgs => {
-            const newMsgs = [...msgs];
-            newMsgs[newMsgs.length - 1] = { type: 'bot', content: reply };
-            return newMsgs;
-          });
-        } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : 'Failed to fetch data';
-          repoChatMessages.update(msgs => {
-            const newMsgs = [...msgs];
-            newMsgs[newMsgs.length - 1] = { type: 'bot', content: `Error: ${errorMsg}` };
-            return newMsgs;
-          });
+        if (data.topics && data.topics.length > 0) {
+          reply += `\n\n**Key topics:** ${data.topics.slice(0, 3).map(t => t.name).join(', ')}`;
         }
-      } else if (userMessageText.includes('pallas')) {
-        commitFilter.set('Pallas');
-        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Filtered View: **Pallas Backend** commits.' }]);
-      } else if (userMessageText.includes('rocm')) {
-        commitFilter.set('ROCm');
-        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Filtered View: **ROCm** commits.' }]);
-      } else if (userMessageText.includes('inductor')) {
-        commitFilter.set('Inductor');
-        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Filtered View: **Inductor** commits.' }]);
-      } else if (userMessageText.includes('reset') || userMessageText.includes('all')) {
-        commitFilter.set('All');
-        repoChatMessages.update(msgs => [...msgs, { type: 'bot', content: 'Showing **all commits**.' }]);
-      } else {
-        repoChatMessages.update(msgs => [...msgs, {
-          type: 'bot',
-          content: 'I can help you:\n- **Fetch data**: "fetch latest data"\n- **Filter commits**: "show pallas", "rocm commits"\n- **Reset filter**: "show all"'
-        }]);
+
+        if (userMessageText.includes('pallas')) {
+          commitFilter.set('Pallas');
+          reply += '\n\nFiltered to show **Pallas Backend** commits.';
+        } else if (userMessageText.includes('rocm')) {
+          commitFilter.set('ROCm');
+          reply += '\n\nFiltered to show **ROCm** commits.';
+        } else if (userMessageText.includes('inductor')) {
+          commitFilter.set('Inductor');
+          reply += '\n\nFiltered to show **Inductor** commits.';
+        } else if (userMessageText.includes('reset') || userMessageText.includes('all')) {
+          commitFilter.set('All');
+          reply += '\n\nShowing **all commits**.';
+        }
+
+        repoChatMessages.update(msgs => {
+          const newMsgs = [...msgs];
+          newMsgs[newMsgs.length - 1] = { type: 'bot', content: reply };
+          return newMsgs;
+        });
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to fetch data';
+        repoChatMessages.update(msgs => {
+          const newMsgs = [...msgs];
+          newMsgs[newMsgs.length - 1] = { type: 'bot', content: `Error: ${errorMsg}` };
+          return newMsgs;
+        });
       }
     } else {
       modelChatMessages.update(msgs => [...msgs, userMessage]);
