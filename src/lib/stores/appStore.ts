@@ -1,10 +1,35 @@
 import { writable, derived } from 'svelte/store';
+import type { HFModel } from '$lib/services/api';
 
-export type ViewType = 'repo' | 'model' | 'triton';
+export type ViewType = 'repo' | 'model';
 
 export interface ChatMessage {
   type: 'bot' | 'user';
   content: string;
+}
+
+export interface ProcessedModel {
+  key: string;
+  name: string;
+  author: string;
+  date: string;
+  createdAt: string;
+  likes: string;
+  downloads: string;
+  trendingScore: number;
+  task: string;
+  status: 'Ready' | 'Partial' | 'Blocked';
+  score: number[];
+  color: string;
+  metrics: {
+    speed: string;
+    vram: string;
+    coverage: string;
+    context: string;
+  };
+  tags: string[];
+  url: string;
+  rawData: HFModel;
 }
 
 export const currentView = writable<ViewType>('repo');
@@ -14,6 +39,10 @@ export const chatExpanded = writable(false);
 export const selectedModelKey = writable('DeepSeek');
 export const showModelDetail = writable(false);
 export const commitFilter = writable<string>('All');
+export const hfModels = writable<ProcessedModel[]>([]);
+export const hfModelsLoading = writable(false);
+export const hfModelsError = writable<string | null>(null);
+export const hfModelsSummary = writable<string | null>(null);
 
 export const repoChatMessages = writable<ChatMessage[]>([
   {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Chart, registerables } from 'chart.js';
-  import { selectedModelKey, showModelDetail } from '$lib/stores/appStore';
+  import { selectedModelKey, showModelDetail, hfModels, hfModelsSummary } from '$lib/stores/appStore';
   import {
     Calendar,
     Heart,
@@ -13,6 +13,7 @@
     ArrowLeft
   } from 'lucide-svelte';
   import { MODEL_DATA, COMPATIBILITY_REPORT_MD } from '$lib/data/constants';
+  import { getMockModels } from '$lib/utils/modelProcessor';
   import { marked } from 'marked';
 
   let canvas: HTMLCanvasElement;
@@ -21,20 +22,20 @@
 
   Chart.register(...registerables);
 
-  $: selectedModel = MODEL_DATA[$selectedModelKey];
-  $: statusBadgeClass = getStatusBadgeClass(selectedModel?.status);
+  $: allModels = $hfModels.length > 0 ? $hfModels : getMockModels();
+  $: selectedModel = allModels.find(m => m.key === $selectedModelKey) || allModels[0];
 
-  function getStatusBadgeClass(status: string | undefined): string {
-    switch (status) {
-      case 'Ready':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'Partial':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'Blocked':
-        return 'bg-red-50 text-red-700 border-red-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+  function formatDate(dateString: string): string {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+      return dateString;
     }
+  }
+
+  function formatTrendingScore(score: number): string {
+    return score.toFixed(1);
   }
 
   function toggleModelDetails() {
@@ -135,7 +136,9 @@
     radarChartInstance.update();
   }
 
-  const compatibilityReportHTML = marked.parse(COMPATIBILITY_REPORT_MD);
+  $: summaryHTML = $hfModelsSummary
+    ? marked.parse($hfModelsSummary)
+    : marked.parse(COMPATIBILITY_REPORT_MD);
 </script>
 
 <div class="lg:col-span-8 bg-white rounded-xl border border-slate-200 shadow-card p-0 flex flex-col h-[560px] relative overflow-hidden">
@@ -143,7 +146,7 @@
     <Radar class="w-96 h-96 text-slate-800" />
   </div>
 
-  {#if !$showModelDetail}
+  {#if !$showModelDetail && selectedModel}
     <div class="flex flex-col h-full w-full p-6 transition-all duration-300 relative z-10">
       <div class="flex justify-between items-center mb-1">
         <div class="flex flex-col">
@@ -151,7 +154,7 @@
           <div class="flex items-center gap-3 mt-1 text-xs font-medium text-slate-600">
             <span class="flex items-center gap-1">
               <Calendar class="w-3 h-3" />
-              {selectedModel.date}
+              {formatDate(selectedModel.createdAt)}
             </span>
             <span class="flex items-center gap-1">
               <Heart class="w-3 h-3" />
@@ -160,6 +163,10 @@
             <span class="flex items-center gap-1">
               <Download class="w-3 h-3" />
               {selectedModel.downloads}
+            </span>
+            <span class="flex items-center gap-1 text-amber-600">
+              <Radar class="w-3 h-3" />
+              {formatTrendingScore(selectedModel.trendingScore)}
             </span>
           </div>
         </div>
@@ -170,10 +177,10 @@
             class="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold rounded-lg transition-colors border border-slate-200 shadow-sm"
           >
             <ListChecks class="w-4 h-4 text-blue-600" />
-            Check Compatibility
+            Model Card
           </button>
-          <div class="flex items-center px-3 py-1.5 rounded-full border text-sm font-bold {statusBadgeClass}">
-            {selectedModel.status}
+          <div class="flex items-center px-3 py-1.5 rounded-full border text-sm font-bold bg-blue-50 text-blue-700 border-blue-200">
+            {selectedModel.task}
           </div>
         </div>
       </div>
@@ -223,9 +230,9 @@
         <div>
           <h3 class="font-bold text-slate-800 flex items-center gap-2">
             <FileCheck class="w-4 h-4 text-blue-600" />
-            Model Compatibility Report: <span>{selectedModel.name}</span>
+            Model Summary Report
           </h3>
-          <p class="text-xs text-slate-600 mt-1">Detailed compatibility analysis for Intel XPU.</p>
+          <p class="text-xs text-slate-600 mt-1">Overview of model compatibility and performance analysis.</p>
         </div>
         <button
           on:click={toggleModelDetails}
@@ -238,7 +245,7 @@
 
       <div class="flex-1 overflow-y-auto p-0">
         <div class="p-8 markdown-content max-w-4xl mx-auto">
-          {@html compatibilityReportHTML}
+          {@html summaryHTML}
         </div>
       </div>
     </div>

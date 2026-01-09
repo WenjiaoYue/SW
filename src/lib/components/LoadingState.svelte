@@ -1,15 +1,17 @@
 <script lang="ts">
-  import { Loader2, Database, GitBranch, Package, Clock } from 'lucide-svelte';
+  import { Loader2, Database, GitBranch, Package, Clock, Cpu, BarChart3 } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
-  let currentStep = 0;
-  let elapsedSeconds = 0;
-
-  const steps = [
+  export let title = 'Loading Repository Data';
+  export let footerText = 'Analyzing large repositories may take 30-60 seconds. Please wait...';
+  export let steps = [
     { icon: GitBranch, label: 'Fetching commits from GitHub...', color: 'text-blue-600' },
     { icon: Package, label: 'Analyzing topics and patterns...', color: 'text-green-600' },
     { icon: Database, label: 'Processing pull requests...', color: 'text-orange-600' }
   ];
+
+  let currentStep = 0;
+  let elapsedSeconds = 0;
 
   onMount(() => {
     const stepInterval = setInterval(() => {
@@ -44,7 +46,7 @@
     </div>
 
     <div class="space-y-3">
-      <h3 class="text-2xl font-bold text-slate-800">Loading Repository Data</h3>
+      <h3 class="text-2xl font-bold text-slate-800">{title}</h3>
       <div class="h-6 flex items-center justify-center">
         <div class="flex items-center gap-2 transition-all duration-500" key={currentStep}>
           <svelte:component this={currentStepData.icon} class="w-5 h-5 {currentStepData.color}" />
@@ -92,7 +94,7 @@
     </div>
 
     <p class="text-xs text-slate-400 px-6">
-      Analyzing large repositories may take 30-60 seconds. Please wait...
+      {footerText}
     </p>
   </div>
 </div>

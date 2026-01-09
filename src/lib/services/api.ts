@@ -79,3 +79,57 @@ export async function fetchGitHubTopics(request: TopicRequest): Promise<APIRespo
 
   return response.json();
 }
+
+export interface HFModel {
+  id: string;
+  name: string;
+  author: string;
+  task: string;
+  library: {
+    name: string;
+    extra: Record<string, any>;
+  };
+  likes: number;
+  downloads: number;
+  trending_score: number;
+  tags: string[];
+  created_at: string;
+  url: string;
+  summary?: {
+    markdown_report?: string;
+  };
+}
+
+export interface HFModelsRequest {
+  limit?: number;
+  task?: string;
+}
+
+export interface HFModelsResponse {
+  models: HFModel[];
+  summary?: {
+    markdown_report?: string;
+  };
+}
+
+export async function fetchHFModels(request: HFModelsRequest = {}): Promise<HFModelsResponse> {
+  const apiUrl = 'http://10.7.4.144:5137/hf_models';
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      limit: request.limit || 10,
+      task: request.task || 'text-generation',
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to fetch HF models');
+  }
+
+  return response.json();
+}
