@@ -40,16 +40,20 @@ export interface PullRequest {
   number: number;
   title: string;
   url: string;
-  author: string;
-  created_at: string;
-  merged_at: string | null;
-  state: string;
-  labels: string[];
+  xpu_relevance_score: number;
+  xpu_relevance_justification: any;
   body: string;
-  diff_summary: any;
+  submitter: string;
+  state: string;
+  tags: string[];
+  created_at: string;
   hardware: string;
   types: string[];
   reasoning: string;
+  author?: string;
+  merged_at?: string | null;
+  labels?: string[];
+  diff_summary?: any;
 }
 
 export interface APIResponse {

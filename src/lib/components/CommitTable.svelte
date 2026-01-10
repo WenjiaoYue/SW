@@ -76,7 +76,7 @@
   <div class="px-4 py-3 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
     <h3 class="font-bold text-slate-800 text-[13px] flex items-center gap-2">
       <GitCommit class="text-blue-600 w-3.5 h-3.5" />
-      Recent Commits
+      Recent Pull Requests
       <span class="bg-slate-200 text-[10px] px-1.5 py-0.5 rounded-full text-slate-600 font-semibold">
         {filteredCommits.length}
       </span>
