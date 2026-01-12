@@ -70,7 +70,7 @@
       <div class="p-1.5 bg-green-100 rounded-md text-green-700">
         <Radar class="w-4 h-4" />
       </div>
-      <span class="font-bold text-lg text-slate-800">Model Intelligence Radar</span>
+      <span class="font-bold text-lg text-slate-800">Model Intelligence</span>
     </div>
 
     <div

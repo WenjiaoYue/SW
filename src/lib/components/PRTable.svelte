@@ -1,18 +1,67 @@
 <script lang="ts">
-  import { GitPullRequest, ChevronDown, ChevronUp, Filter, X, Cpu, Tag, User, FileText, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-svelte';
+  import { GitPullRequest, ChevronDown, ChevronUp, Filter, X, Cpu, Tag, User, FileText, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Code } from 'lucide-svelte';
   import type { PullRequest } from '$lib/services/api';
 
   export let prs: PullRequest[] = [];
 
   let expandedPRMap: { [key: number]: boolean } = {};
+  let expandedOpMap: { [key: string]: boolean } = {};
   let showFilters = false;
 
   let filters = {
     hardware: [] as string[],
     state: [] as string[],
     types: [] as string[],
-    minXPUScore: 0,
+    minRelevanceScore: 0,
+    maxRelevanceScore: 100,
   };
+
+  // --- 双滑块逻辑 ---
+  function handleMinChange() {
+    filters.minRelevanceScore = Math.min(filters.minRelevanceScore, filters.maxRelevanceScore);
+  }
+
+  function handleMaxChange() {
+    filters.maxRelevanceScore = Math.max(filters.maxRelevanceScore, filters.minRelevanceScore);
+  }
+
+// 点击轨道：智能判断移动 Min 还是 Max
+  function handleTrackClick(event: MouseEvent) {
+    const track = event.currentTarget as HTMLElement;
+    const rect = track.getBoundingClientRect();
+    const percent = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
+    const val = Math.round(percent);
+
+    const { minRelevanceScore: min, maxRelevanceScore: max } = filters;
+
+    // 逻辑：
+    // 1. 如果是初始满状态 (0-100)，用户点击通常是为了设置门槛，所以强制动 Min
+    // 2. 如果不是满状态，则谁离鼠标点击位置近，就动谁
+    if (min === 0 && max === 100) {
+      filters.minRelevanceScore = val;
+    } else {
+      const distMin = Math.abs(val - min);
+      const distMax = Math.abs(val - max);
+
+      if (distMin < distMax) {
+        filters.minRelevanceScore = val;
+      } else {
+        filters.maxRelevanceScore = val;
+      }
+    }
+
+    // 最后的安全检查：防止交叉
+    if (filters.minRelevanceScore > filters.maxRelevanceScore) {
+       // 如果发生了交叉，交换数值，确保 min < max
+       const temp = filters.minRelevanceScore;
+       filters.minRelevanceScore = filters.maxRelevanceScore;
+       filters.maxRelevanceScore = temp;
+    }
+  }
+
+  // 计算中间蓝色条的位置
+  $: rangeStyle = `left: ${filters.minRelevanceScore}%; right: ${100 - filters.maxRelevanceScore}%;`;
+  // ----------------------
 
   type SortField = 'xpu_relevance_score' | 'number' | 'created_at' | null;
   type SortDirection = 'asc' | 'desc';
@@ -25,6 +74,27 @@
 
   function togglePRDetails(prNumber: number) {
     expandedPRMap[prNumber] = !expandedPRMap[prNumber];
+  }
+
+  function toggleOpDetails(prNumber: number, opName: string) {
+    const key = `${prNumber}-${opName}`;
+    expandedOpMap[key] = !expandedOpMap[key];
+  }
+
+  function isOpExpanded(prNumber: number, opName: string): boolean {
+    const key = `${prNumber}-${opName}`;
+    return expandedOpMap[key] || false;
+  }
+
+  function getStatusBadgeClass(status: string): string {
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('cuda_only') || lowerStatus.includes('not')) {
+      return 'text-red-700 bg-red-50 border-red-200';
+    } else if (lowerStatus.includes('supported')) {
+      return 'text-green-700 bg-green-50 border-green-200';
+    } else {
+      return 'text-slate-700 bg-slate-50 border-slate-200';
+    }
   }
 
   function truncateText(text: string, maxLength: number): string {
@@ -114,7 +184,7 @@
       if (filters.types.length > 0 && !pr.types.some(type => filters.types.includes(type))) {
         return false;
       }
-      if (pr.xpu_relevance_score < filters.minXPUScore) {
+      if (pr.xpu_relevance_score < filters.minRelevanceScore || pr.xpu_relevance_score > filters.maxRelevanceScore) {
         return false;
       }
       return true;
@@ -174,7 +244,8 @@
       hardware: [],
       state: [],
       types: [],
-      minXPUScore: 0,
+      minRelevanceScore: 0,
+      maxRelevanceScore: 100,
     };
   }
 
@@ -205,7 +276,7 @@
     }
   }
 
-  $: hasActiveFilters = filters.hardware.length > 0 || filters.state.length > 0 || filters.types.length > 0 || filters.minXPUScore > 0;
+  $: hasActiveFilters = filters.hardware.length > 0 || filters.state.length > 0 || filters.types.length > 0 || filters.minRelevanceScore > 0 || filters.maxRelevanceScore < 100;
 
   $: pageNumbers = (() => {
     const pages: number[] = [];
@@ -275,7 +346,7 @@
         Filters
         {#if hasActiveFilters}
           <span class="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-bold">
-            {filters.hardware.length + filters.state.length + filters.types.length + (filters.minXPUScore > 0 ? 1 : 0)}
+            {filters.hardware.length + filters.state.length + filters.types.length + (filters.minRelevanceScore > 0 || filters.maxRelevanceScore < 100 ? 1 : 0)}
           </span>
         {/if}
       </button>
@@ -324,16 +395,49 @@
             {/each}
           </div>
         </div>
+        
         <div>
-          <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Min XPU Score: {filters.minXPUScore}</label>
-          <input
-            type="range"
-            min="0"
-            max="10"
-            step="1"
-            bind:value={filters.minXPUScore}
-            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-cyan-600"
-          />
+          <div class="flex justify-between items-center mb-1.5 whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-semibold text-slate-700">Relevance Score</label>
+              <span class="text-[10px] text-slate-500 font-medium">({allFilteredPRs.length} matches)</span>
+            </div>
+            <span class="text-[10px] text-slate-500 font-mono bg-slate-100 px-1.5 rounded whitespace-nowrap">
+              {filters.minRelevanceScore} - {filters.maxRelevanceScore}
+            </span>
+          </div>
+          
+          <div 
+            class="relative h-4 w-full flex items-center cursor-pointer"
+            on:click={handleTrackClick}
+          >
+            <div class="absolute w-full h-1.5 bg-slate-200 rounded-full overflow-hidden"></div>
+            
+            <div 
+              class="absolute h-1.5 bg-blue-600 rounded-full"
+              style={rangeStyle}
+            ></div>
+
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              bind:value={filters.minRelevanceScore}
+              on:input={handleMinChange}
+              class="absolute top-0 w-full h-full appearance-none bg-transparent pointer-events-none z-10 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-slate-300 [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-slate-300 [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-pointer"
+            />
+            
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              bind:value={filters.maxRelevanceScore}
+              on:input={handleMaxChange}
+              class="absolute top-0 w-full h-full appearance-none bg-transparent pointer-events-none z-20 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-slate-300 [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-slate-300 [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-pointer"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -560,6 +664,138 @@
                         {/if}
                       </div>
                     </div>
+
+                    {#if pr.triton_ops && pr.triton_ops.length > 0}
+                      <div class="mt-4">
+                        <div class="bg-white rounded-lg border border-slate-200 p-3">
+                          <div class="flex items-center gap-1.5 mb-3">
+                            <Code class="w-4 h-4 text-purple-600" />
+                            <h4 class="font-semibold text-slate-800">Triton Kernel Ops ({pr.triton_ops.length})</h4>
+                          </div>
+                          <div class="space-y-2">
+                            {#each pr.triton_ops as op}
+                              <div class="border border-slate-200 rounded-lg overflow-hidden">
+                                <button
+                                  on:click={() => toggleOpDetails(pr.number, op.op_name)}
+                                  class="w-full p-3 bg-slate-50 hover:bg-slate-100 transition flex items-center justify-between"
+                                >
+                                  <div class="flex items-center gap-3 flex-1 text-left">
+                                    <div class="flex flex-col gap-1">
+                                      <div class="flex items-center gap-2">
+                                        <span class="font-mono font-bold text-slate-800 text-xs">{op.op_name}</span>
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase border {getStatusBadgeClass(op.meta.status)}">
+                                          {op.meta.status}
+                                        </span>
+                                      </div>
+                                      <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-[10px] text-slate-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                          {op.high_level_category}
+                                        </span>
+                                        <span class="text-[10px] text-slate-500">Confidence: {(op.confidence * 100).toFixed(0)}%</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div class="flex items-center gap-3">
+                                    <div class="flex flex-col items-end gap-1">
+                                      <div class="flex items-center gap-1">
+                                        <span class="text-[9px] text-slate-500">TorchInductor:</span>
+                                        <span class="text-[9px] font-semibold {op.torch_inductor_triton.toLowerCase() === 'supported' ? 'text-green-600' : 'text-slate-600'}">
+                                          {op.torch_inductor_triton}
+                                        </span>
+                                      </div>
+                                      <div class="flex items-center gap-1">
+                                        <span class="text-[9px] text-slate-500">Official Triton:</span>
+                                        <span class="text-[9px] font-semibold text-blue-600">
+                                          {op.official_triton.summary ? 'Available' : 'N/A'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    {#if isOpExpanded(pr.number, op.op_name)}
+                                      <ChevronUp class="w-4 h-4 text-slate-400" />
+                                    {:else}
+                                      <ChevronDown class="w-4 h-4 text-slate-400" />
+                                    {/if}
+                                  </div>
+                                </button>
+
+                                {#if isOpExpanded(pr.number, op.op_name)}
+                                  <div class="p-3 bg-white border-t border-slate-200">
+                                    <div class="space-y-3 text-[11px]">
+                                      <div>
+                                        <span class="font-semibold text-slate-700 block mb-1">Description:</span>
+                                        <p class="text-slate-600 leading-relaxed">{op.description}</p>
+                                      </div>
+
+                                      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div class="bg-slate-50 rounded p-2 border border-slate-200">
+                                          <span class="font-semibold text-slate-700 block mb-1.5">TorchInductor Triton:</span>
+                                          <span class="font-mono px-2 py-1 rounded text-[10px] {op.torch_inductor_triton.toLowerCase() === 'supported' ? 'text-green-700 bg-green-50 border border-green-200' : 'text-slate-700 bg-slate-100 border border-slate-200'} inline-block">
+                                            {op.torch_inductor_triton}
+                                          </span>
+                                        </div>
+
+                                        <div class="bg-slate-50 rounded p-2 border border-slate-200">
+                                          <span class="font-semibold text-slate-700 block mb-1.5">Official Triton:</span>
+                                          {#if op.official_triton.summary}
+                                            <p class="text-slate-600 text-[10px] leading-relaxed">{op.official_triton.summary}</p>
+                                          {:else}
+                                            <span class="text-slate-400 text-[10px]">No summary available</span>
+                                          {/if}
+                                        </div>
+                                      </div>
+
+                                      <div class="bg-blue-50 rounded p-2 border border-blue-200">
+                                        <span class="font-semibold text-slate-700 block mb-1.5">Backend Hint:</span>
+                                        <span class="text-slate-600">{op.backend_hint}</span>
+                                        <span class="font-semibold text-slate-700 block mt-2 mb-1">Pattern:</span>
+                                        <span class="font-mono text-blue-700 text-[10px] bg-white px-1.5 py-0.5 rounded">{op.likely_triton_pattern}</span>
+                                      </div>
+
+                                      <div class="bg-slate-50 rounded p-2 border border-slate-200">
+                                        <span class="font-semibold text-slate-700 block mb-1.5">Function Signature:</span>
+                                        <code class="text-[10px] text-slate-600 bg-white px-2 py-1 rounded block overflow-x-auto">{op.meta.func_signature}</code>
+                                      </div>
+
+                                      <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                          <span class="font-semibold text-slate-600 block mb-1">CUDA Function:</span>
+                                          <span class="font-mono text-[10px] {op.meta.cuda_func ? 'text-green-700' : 'text-slate-400'}">
+                                            {op.meta.cuda_func || 'N/A'}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <span class="font-semibold text-slate-600 block mb-1">XPU Function:</span>
+                                          <span class="font-mono text-[10px] {op.meta.xpu_func ? 'text-green-700' : 'text-red-600'}">
+                                            {op.meta.xpu_func || 'N/A'}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {#if op.meta.dispatches && Object.keys(op.meta.dispatches).length > 0}
+                                        <div>
+                                          <span class="font-semibold text-slate-700 block mb-1.5">Dispatches:</span>
+                                          <div class="flex flex-wrap gap-1.5">
+                                            {#each Object.entries(op.meta.dispatches) as [backend, func]}
+                                              <span class="px-1.5 py-0.5 rounded text-[9px] bg-slate-100 text-slate-700 border border-slate-200">
+                                                <span class="font-semibold">{backend}:</span> {func}
+                                              </span>
+                                            {/each}
+                                          </div>
+                                        </div>
+                                      {/if}
+
+                                      <div class="text-[10px] text-slate-500 pt-2 border-t border-slate-200">
+                                        <span class="font-semibold">Source:</span> {op.meta.source_file}
+                                      </div>
+                                    </div>
+                                  </div>
+                                {/if}
+                              </div>
+                            {/each}
+                          </div>
+                        </div>
+                      </div>
+                    {/if}
                   </div>
                 </td>
               </tr>

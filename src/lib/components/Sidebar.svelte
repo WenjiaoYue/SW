@@ -12,7 +12,7 @@
     <div class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-white font-bold mr-3 shadow-sm">
       AI
     </div>
-    <span class="font-bold text-lg tracking-tight text-slate-800">DevOS</span>
+    <span class="font-bold text-lg tracking-tight text-slate-800">DevAgent</span>
   </div>
 
   <nav class="flex-1 p-4 space-y-1">
@@ -35,7 +35,7 @@
       class:active={$currentView === 'model'}
     >
       <Radar class="w-4 h-4 mr-3" />
-      <span class="text-sm">Model Radar</span>
+      <span class="text-sm">Model List</span>
     </button>
 
     <button

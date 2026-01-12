@@ -151,6 +151,7 @@ export interface HFModel {
   'huggingface/transformers'?: FrameworkSupport;
   'vllm-project/vllm'?: FrameworkSupport;
   xpu?: FrameworkSupport;
+  dtypes: string;
 }
 
 export interface HFModelsRequest {

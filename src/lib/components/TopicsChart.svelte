@@ -68,7 +68,8 @@
             },
             ticks: {
               color: '#94a3b8',
-              font: { size: 11 }
+              font: { size: 11 },
+              precision: 0
             }
           },
           x: {

@@ -8,7 +8,7 @@
   import EmptyState from './EmptyState.svelte';
   import { repoData, isLoadingData } from '$lib/stores/dataStore';
 
-  let activeTab: 'report' | 'chart' = 'chart';
+  let activeTab: 'report' | 'chart' = 'report';
 
   function switchTab(tab: 'report' | 'chart') {
     activeTab = tab;
@@ -29,20 +29,20 @@
       <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-card flex flex-col h-[520px] overflow-hidden">
         <div class="px-5 pt-4 border-b border-slate-200 flex gap-4">
           <button
-            on:click={() => switchTab('chart')}
-            class="tab-btn flex items-center gap-1.5 text-[13px]"
-            class:active={activeTab === 'chart'}
-          >
-            <BarChart2 class="w-3.5 h-3.5" />
-            Hot Topics
-          </button>
-          <button
             on:click={() => switchTab('report')}
             class="tab-btn flex items-center gap-1.5 text-[13px]"
             class:active={activeTab === 'report'}
           >
             <FileText class="w-3.5 h-3.5" />
             Insights
+          </button>
+          <button
+            on:click={() => switchTab('chart')}
+            class="tab-btn flex items-center gap-1.5 text-[13px]"
+            class:active={activeTab === 'chart'}
+          >
+            <BarChart2 class="w-3.5 h-3.5" />
+            Hot Topics
           </button>
         </div>
 
