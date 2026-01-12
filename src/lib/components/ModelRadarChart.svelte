@@ -245,7 +245,7 @@
                     <Cpu class="w-5 h-5 {xpuStatus.color}" />
                   </div>
                   <div class="text-left">
-                    <h3 class="text-sm font-bold text-slate-800">Intel XPU Support</h3>
+                    <h3 class="text-sm font-bold text-slate-800">Intel XPU Support (vLLM)</h3>
                     <div class="flex items-center gap-2 mt-0.5">
                       <svelte:component this={xpuStatus.icon} class="w-3.5 h-3.5 {xpuStatus.color}" />
                       <p class="text-xs {xpuStatus.color} font-semibold">{xpuStatus.label}</p>
