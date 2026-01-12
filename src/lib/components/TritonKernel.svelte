@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { ChevronDown, ChevronUp, Code, AlertCircle, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, Zap, Target, TrendingUp, Cpu, Layers, Box } from 'lucide-svelte';
-  import { tritonOps, tritonOpsLoading, tritonOpsError } from '$lib/stores/appStore';
+  import { tritonOps, tritonOpsLoading, tritonOpsError, tritonSubView } from '$lib/stores/appStore';
   import { fetchTritonOps } from '$lib/services/api';
   import type { TritonOp } from '$lib/services/api';
   import LoadingState from './LoadingState.svelte';
+  import TritonInsights from './TritonInsights.svelte';
 
   let expandedOpMap: { [key: string]: boolean } = {};
   let showFilters = false;
@@ -177,7 +178,9 @@
   ];
 </script>
 
-{#if $tritonOpsLoading}
+{#if $tritonSubView === 'insights'}
+  <TritonInsights repo="pytorch/pytorch" days={7} maxCommits={5} />
+{:else if $tritonOpsLoading}
   <LoadingState
     title="Loading Triton Kernel Operations"
     footerText="Fetching operation definitions and compatibility data. Please wait..."
@@ -199,7 +202,7 @@
   </div>
 {:else}
   <div class="space-y-6 max-w-7xl mx-auto">
-    <!-- <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg">
         <div class="flex items-center justify-between mb-3">
           <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
@@ -256,7 +259,7 @@
           <span class="text-xs font-semibold">{stats.total > 0 ? Math.round(stats.tritonSupported / stats.total * 100) : 0}%</span>
         </div>
       </div>
-    </div> -->
+    </div>
 
     <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
       <div class="px-4 py-3 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">

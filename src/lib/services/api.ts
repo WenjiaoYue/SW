@@ -151,7 +151,6 @@ export interface HFModel {
   'huggingface/transformers'?: FrameworkSupport;
   'vllm-project/vllm'?: FrameworkSupport;
   xpu?: FrameworkSupport;
-  dtypes: string;
 }
 
 export interface HFModelsRequest {
@@ -477,6 +476,42 @@ const MOCK_TRITON_OPS: TritonOp[] = [
     }
   }
 ];
+
+export interface TritonInsight {
+  op: string;
+  torch_op_insights: string;
+  torch_inductor_insights: string;
+  triton_insights: string;
+}
+
+export interface TritonInsightsRequest {
+  repo: string;
+  days?: number;
+  max_commits?: number;
+}
+
+export interface TritonInsightsResponse {
+  data: TritonInsight[];
+}
+
+export async function fetchTritonInsights(request: TritonInsightsRequest): Promise<TritonInsightsResponse> {
+  const apiUrl = 'http://10.7.4.144:5137/triton_insights';
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to fetch Triton insights');
+  }
+
+  return response.json();
+}
 
 export async function fetchTritonOps(): Promise<TritonOpsResponse> {
   return new Promise((resolve) => {

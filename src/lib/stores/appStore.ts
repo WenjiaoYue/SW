@@ -48,6 +48,13 @@ export const tritonOps = writable<any[]>([]);
 export const tritonOpsLoading = writable(false);
 export const tritonOpsError = writable<string | null>(null);
 
+export const tritonInsights = writable<any[]>([]);
+export const tritonInsightsLoading = writable(false);
+export const tritonInsightsError = writable<string | null>(null);
+
+export type TritonSubView = 'legacy' | 'insights';
+export const tritonSubView = writable<TritonSubView>('insights');
+
 export const repoChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',

@@ -30,7 +30,7 @@
 
   let filterText = "";
   let currentPage = 1;
-  const itemsPerPage = 8;
+  const itemsPerPage = 6;
   let showFilters = false;
   let filters = {
     minLikes: 0,
