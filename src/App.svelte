@@ -3,6 +3,7 @@
   import Header from './lib/components/Header.svelte';
   import RepoOverview from './lib/components/RepoOverview.svelte';
   import ModelRadar from './lib/components/ModelRadar.svelte';
+  import TritonKernel from './lib/components/TritonKernel.svelte';
   import ChatWidget from './lib/components/ChatWidget.svelte';
   import { currentView } from './lib/stores/appStore';
 </script>
@@ -18,9 +19,13 @@
         <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'repo'}>
           <RepoOverview />
         </div>
-      {:else}
+      {:else if $currentView === 'model'}
         <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'model'}>
           <ModelRadar />
+        </div>
+      {:else if $currentView === 'triton'}
+        <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'triton'}>
+          <TritonKernel />
         </div>
       {/if}
     </main>

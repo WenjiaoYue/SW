@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronDown, Radar, Codesandbox } from 'lucide-svelte';
+  import { ChevronDown, Radar, Cpu } from 'lucide-svelte';
   import { currentView, currentProject } from '$lib/stores/appStore';
   import { PROJECTS } from '$lib/data/constants';
 
@@ -65,12 +65,22 @@
 
     <div
       class="header-item flex items-center gap-2"
-      class:hidden-item={$currentView === 'repo' || $currentView === 'triton'}
+      class:hidden-item={$currentView !== 'model'}
     >
       <div class="p-1.5 bg-green-100 rounded-md text-green-700">
         <Radar class="w-4 h-4" />
       </div>
-      <span class="font-bold text-lg text-slate-800">HuggingFace Model</span>
+      <span class="font-bold text-lg text-slate-800">Model Intelligence Radar</span>
+    </div>
+
+    <div
+      class="header-item flex items-center gap-2"
+      class:hidden-item={$currentView !== 'triton'}
+    >
+      <div class="p-1.5 bg-purple-100 rounded-md text-purple-700">
+        <Cpu class="w-4 h-4" />
+      </div>
+      <span class="font-bold text-lg text-slate-800">Triton Kernel Operations</span>
     </div>
   </div>
 

@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { HFModel } from '$lib/services/api';
 
-export type ViewType = 'repo' | 'model';
+export type ViewType = 'repo' | 'model' | 'triton';
 
 export interface ChatMessage {
   type: 'bot' | 'user';
@@ -44,6 +44,10 @@ export const hfModelsError = writable<string | null>(null);
 export const hfModelsSummary = writable<string | null>(null);
 export const hfModelsLoaded = writable(false);
 
+export const tritonOps = writable<any[]>([]);
+export const tritonOpsLoading = writable(false);
+export const tritonOpsError = writable<string | null>(null);
+
 export const repoChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
@@ -58,7 +62,18 @@ export const modelChatMessages = writable<ChatMessage[]>([
   }
 ]);
 
+export const tritonChatMessages = writable<ChatMessage[]>([
+  {
+    type: 'bot',
+    content: "Hello! I can help you explore Triton kernel operations and their XPU compatibility."
+  }
+]);
+
 export const currentChatMessages = derived(
   currentView,
-  ($currentView) => $currentView === 'repo' ? repoChatMessages : modelChatMessages
+  ($currentView) => {
+    if ($currentView === 'repo') return repoChatMessages;
+    if ($currentView === 'model') return modelChatMessages;
+    return tritonChatMessages;
+  }
 );

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { GitBranch, Radar, BookOpen, Codesandbox } from 'lucide-svelte';
+  import { GitBranch, Radar, BookOpen, Cpu } from 'lucide-svelte';
   import { currentView } from '$lib/stores/appStore';
 
   function switchView(view: 'repo' | 'model' | 'triton') {
@@ -12,7 +12,7 @@
     <div class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-white font-bold mr-3 shadow-sm">
       AI
     </div>
-    <span class="font-bold text-lg tracking-tight text-slate-800">AI DevAgents</span>
+    <span class="font-bold text-lg tracking-tight text-slate-800">DevOS</span>
   </div>
 
   <nav class="flex-1 p-4 space-y-1">
@@ -35,7 +35,7 @@
       class:active={$currentView === 'model'}
     >
       <Radar class="w-4 h-4 mr-3" />
-      <span class="text-sm">HuggingFace Model</span>
+      <span class="text-sm">Model Radar</span>
     </button>
 
     <button
@@ -43,7 +43,7 @@
       class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
       class:active={$currentView === 'triton'}
     >
-      <Codesandbox class="w-4 h-4 mr-3" />
+      <Cpu class="w-4 h-4 mr-3" />
       <span class="text-sm">Triton Kernel</span>
     </button>
   </nav>

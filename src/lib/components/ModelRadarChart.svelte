@@ -26,6 +26,14 @@
     vllm: false
   };
 
+  $: if ($selectedModelKey) {
+    expandedSections = {
+      xpu: false,
+      transformers: false,
+      vllm: false
+    };
+  }
+
   function toggleSection(section: string) {
     expandedSections[section] = !expandedSections[section];
   }
