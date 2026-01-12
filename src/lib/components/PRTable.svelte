@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { GitPullRequest, ChevronDown, ChevronUp, Filter, X, Cpu, Tag, User, FileText, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-svelte';
+  import { GitPullRequest, ChevronDown, ChevronUp, Filter, X, Cpu, Tag, User, FileText, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-svelte';
   import type { PullRequest } from '$lib/services/api';
 
   export let prs: PullRequest[] = [];
@@ -19,6 +19,9 @@
 
   let sortField: SortField = null;
   let sortDirection: SortDirection = 'desc';
+
+  let currentPage = 1;
+  let itemsPerPage = 10;
 
   function togglePRDetails(prNumber: number) {
     expandedPRMap[prNumber] = !expandedPRMap[prNumber];
@@ -100,7 +103,7 @@
   $: uniqueStates = [...new Set(prs.map(pr => pr.state))];
   $: uniqueTypes = [...new Set(prs.flatMap(pr => pr.types))];
 
-  $: filteredPRs = (() => {
+  $: allFilteredPRs = (() => {
     let filtered = prs.filter(pr => {
       if (filters.hardware.length > 0 && !filters.hardware.includes(pr.hardware)) {
         return false;
@@ -141,6 +144,22 @@
     return filtered;
   })();
 
+  $: totalPages = Math.ceil(allFilteredPRs.length / itemsPerPage);
+
+  $: {
+    if (currentPage > totalPages && totalPages > 0) {
+      currentPage = totalPages;
+    }
+    if (currentPage < 1) {
+      currentPage = 1;
+    }
+  }
+
+  $: filteredPRs = allFilteredPRs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   function toggleFilter(filterType: 'hardware' | 'state' | 'types', value: string) {
     const currentFilters = filters[filterType];
     if (currentFilters.includes(value)) {
@@ -168,7 +187,60 @@
     }
   }
 
+  function goToPage(page: number) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+    }
+  }
+
+  function nextPage() {
+    if (currentPage < totalPages) {
+      currentPage++;
+    }
+  }
+
+  function previousPage() {
+    if (currentPage > 1) {
+      currentPage--;
+    }
+  }
+
   $: hasActiveFilters = filters.hardware.length > 0 || filters.state.length > 0 || filters.types.length > 0 || filters.minXPUScore > 0;
+
+  $: pageNumbers = (() => {
+    const pages: number[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push(-1);
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push(-1);
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push(-1);
+        pages.push(currentPage - 1);
+        pages.push(currentPage);
+        pages.push(currentPage + 1);
+        pages.push(-1);
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  })();
 </script>
 
 <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
@@ -176,7 +248,7 @@
     <div class="flex items-center gap-2">
       <GitPullRequest class="w-4 h-4 text-blue-600" />
       <h3 class="font-bold text-slate-800 text-sm">Pull Request Analysis</h3>
-      <span class="text-xs text-slate-500">({filteredPRs.length} of {prs.length})</span>
+      <span class="text-xs text-slate-500">({allFilteredPRs.length} of {prs.length})</span>
     </div>
     <div class="flex items-center gap-2">
       {#if hasActiveFilters}
@@ -497,4 +569,47 @@
       </tbody>
     </table>
   </div>
+
+  {#if totalPages > 1}
+    <div class="px-4 py-3 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between">
+      <div class="text-xs text-slate-600">
+        Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, allFilteredPRs.length)} of {allFilteredPRs.length}
+      </div>
+
+      <div class="flex items-center gap-1">
+        <button
+          on:click={previousPage}
+          disabled={currentPage === 1}
+          class="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
+        >
+          <ChevronLeft class="w-3.5 h-3.5" />
+          <span class="text-xs font-medium">Previous</span>
+        </button>
+
+        <div class="flex items-center gap-1">
+          {#each pageNumbers as pageNum}
+            {#if pageNum === -1}
+              <span class="px-2 text-slate-400">...</span>
+            {:else}
+              <button
+                on:click={() => goToPage(pageNum)}
+                class="px-2.5 py-1 rounded text-xs font-medium transition {pageNum === currentPage ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-white border border-slate-200'}"
+              >
+                {pageNum}
+              </button>
+            {/if}
+          {/each}
+        </div>
+
+        <button
+          on:click={nextPage}
+          disabled={currentPage === totalPages}
+          class="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
+        >
+          <span class="text-xs font-medium">Next</span>
+          <ChevronRight class="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  {/if}
 </div>

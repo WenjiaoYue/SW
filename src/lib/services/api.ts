@@ -5,13 +5,15 @@ interface TopicRequest {
 }
 
 export interface Topic {
-  id: string;
-  name: string;
-  summary: string;
-  related_paths: string[];
-  keywords: string[];
-  contributors: string[];
-  commit_count: number;
+  topic_name: string;
+  count: number;
+}
+
+export interface RecentPR {
+  title: string;
+  url: string;
+  number: number;
+  topic_name: string;
 }
 
 export interface CommitInfo {
@@ -62,6 +64,7 @@ export interface APIResponse {
   summary: string;
   topics: Topic[];
   commits: Commit[];
+  prs: RecentPR[];
   prs_analysis?: PullRequest[];
 }
 
@@ -84,24 +87,42 @@ export async function fetchGitHubTopics(request: TopicRequest): Promise<APIRespo
   return response.json();
 }
 
+export interface FrameworkIssue {
+  url: string;
+  state: string;
+  title: string;
+  summary: string;
+}
+
+export interface FrameworkPR {
+  url: string;
+  state: string;
+  title: string;
+  summary: string;
+}
+
+export interface FrameworkSupport {
+  status: string;
+  details: string;
+  issues?: FrameworkIssue[];
+  pull_requests?: FrameworkPR[];
+}
+
 export interface HFModel {
   id: string;
-  name: string;
+  link: string;
   author: string;
-  task: string;
-  library: {
-    name: string;
-    extra: Record<string, any>;
-  };
-  likes: number;
-  downloads: number;
-  trending_score: number;
-  tags: string[];
   created_at: string;
-  url: string;
-  summary?: {
-    markdown_report?: string;
-  };
+  downloads: number;
+  likes: number;
+  task: string;
+  tags: string[];
+  trending_score: number;
+  model_size: string;
+  architectures: string[];
+  'huggingface/transformers'?: FrameworkSupport;
+  'vllm-project/vllm'?: FrameworkSupport;
+  xpu?: FrameworkSupport;
 }
 
 export interface HFModelsRequest {
@@ -110,7 +131,7 @@ export interface HFModelsRequest {
 }
 
 export interface HFModelsResponse {
-  models: HFModel[];
+  data: HFModel[];
   summary?: {
     markdown_report?: string;
   };
@@ -135,5 +156,10 @@ export async function fetchHFModels(request: HFModelsRequest = {}): Promise<HFMo
     throw new Error(errorText || 'Failed to fetch HF models');
   }
 
-  return response.json();
+  const result = await response.json();
+
+  return {
+    data: result.data || result,
+    summary: result.summary
+  };
 }

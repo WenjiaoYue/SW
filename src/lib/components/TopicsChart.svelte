@@ -30,12 +30,12 @@
 
     if ($repoData?.topics && $repoData.topics.length > 0) {
       const sortedTopics = [...$repoData.topics]
-        .sort((a, b) => b.commit_count - a.commit_count)
+        .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
       if (sortedTopics.length > 0) {
-        chartLabels = sortedTopics.map(topic => topic.name);
-        chartData = sortedTopics.map(topic => topic.commit_count);
+        chartLabels = sortedTopics.map(topic => topic.topic_name);
+        chartData = sortedTopics.map(topic => topic.count);
       }
     }
 

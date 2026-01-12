@@ -25,38 +25,60 @@ function calculateDaysAgo(dateString: string): string {
   return `${Math.floor(diffDays / 365)}y ago`;
 }
 
-function generateMockMetrics(): ProcessedModel['metrics'] {
-  return {
-    speed: Math.floor(Math.random() * 100 + 50).toString(),
-    vram: Math.floor(Math.random() * 32 + 8).toString(),
-    coverage: Math.floor(Math.random() * 30 + 70) + '%',
-    context: ['4k', '8k', '16k', '32k', '64k'][Math.floor(Math.random() * 5)]
-  };
-}
+function getScoreFromStatus(status: string | undefined): number {
+  if (!status) return 0;
 
-function generateMockScore(): number[] {
-  return [
-    Math.floor(Math.random() * 40 + 60),
-    Math.floor(Math.random() * 40 + 60),
-    Math.floor(Math.random() * 40 + 60),
-    Math.floor(Math.random() * 40 + 60),
-    Math.floor(Math.random() * 40 + 60)
-  ];
-}
+  const statusLower = status.toLowerCase();
 
-function determineStatus(): 'Ready' | 'Partial' | 'Blocked' {
-  const rand = Math.random();
-  if (rand < 0.5) return 'Ready';
-  if (rand < 0.85) return 'Partial';
-  return 'Blocked';
+  if (statusLower.includes('support') && !statusLower.includes('not') && !statusLower.includes('un')) {
+    return 90;
+  }
+  if (statusLower.includes('partial') || statusLower.includes('likely') || statusLower.includes('limited')) {
+    return 65;
+  }
+  if (statusLower.includes('unclear') || statusLower.includes('unknown')) {
+    return 40;
+  }
+  if (statusLower.includes('not') || statusLower.includes('block') || statusLower.includes('unsupport')) {
+    return 20;
+  }
+
+  return 50;
 }
 
 const COLORS = ['#2563eb', '#0891b2', '#7c3aed', '#d97706', '#dc2626'];
 
+function extractModelName(modelId: string): string {
+  const parts = modelId.split('/');
+  return parts.length > 1 ? parts[parts.length - 1] : modelId;
+}
+
+function generateScoreFromModel(model: HFModel): number[] {
+  const transformersScore = model['huggingface/transformers']
+    ? getScoreFromStatus(model['huggingface/transformers'].status)
+    : 0;
+
+  const vllmScore = model['vllm-project/vllm']
+    ? getScoreFromStatus(model['vllm-project/vllm'].status)
+    : 0;
+
+  const xpuScore = model.xpu
+    ? getScoreFromStatus(model.xpu.status)
+    : 0;
+
+  return [
+    transformersScore,
+    vllmScore,
+    xpuScore,
+    0,
+    0
+  ];
+}
+
 export function processHFModel(model: HFModel, index: number): ProcessedModel {
   return {
     key: model.id,
-    name: model.name,
+    name: extractModelName(model.id),
     author: model.author,
     date: calculateDaysAgo(model.created_at),
     createdAt: model.created_at,
@@ -64,12 +86,17 @@ export function processHFModel(model: HFModel, index: number): ProcessedModel {
     downloads: formatNumber(model.downloads),
     trendingScore: model.trending_score,
     task: model.task,
-    status: determineStatus(),
-    score: generateMockScore(),
+    status: model.xpu?.status || 'Unknown',
+    score: generateScoreFromModel(model),
     color: COLORS[index % COLORS.length],
-    metrics: generateMockMetrics(),
+    metrics: {
+      speed: '',
+      vram: '',
+      coverage: '',
+      context: ''
+    },
     tags: model.tags,
-    url: model.url,
+    url: model.link,
     rawData: model
   };
 }

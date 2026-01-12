@@ -37,12 +37,12 @@ export const currentProject = writable('pytorch/pytorch');
 export const chatDockOpen = writable(false);
 export const chatExpanded = writable(false);
 export const selectedModelKey = writable('DeepSeek');
-export const showModelDetail = writable(false);
 export const commitFilter = writable<string>('All');
 export const hfModels = writable<ProcessedModel[]>([]);
 export const hfModelsLoading = writable(false);
 export const hfModelsError = writable<string | null>(null);
 export const hfModelsSummary = writable<string | null>(null);
+export const hfModelsLoaded = writable(false);
 
 export const repoChatMessages = writable<ChatMessage[]>([
   {
