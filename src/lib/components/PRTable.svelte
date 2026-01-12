@@ -16,7 +16,6 @@
     maxRelevanceScore: 100,
   };
 
-  // --- 双滑块逻辑 ---
   function handleMinChange() {
     filters.minRelevanceScore = Math.min(filters.minRelevanceScore, filters.maxRelevanceScore);
   }
@@ -25,7 +24,6 @@
     filters.maxRelevanceScore = Math.max(filters.maxRelevanceScore, filters.minRelevanceScore);
   }
 
-// 点击轨道：智能判断移动 Min 还是 Max
   function handleTrackClick(event: MouseEvent) {
     const track = event.currentTarget as HTMLElement;
     const rect = track.getBoundingClientRect();
@@ -34,9 +32,6 @@
 
     const { minRelevanceScore: min, maxRelevanceScore: max } = filters;
 
-    // 逻辑：
-    // 1. 如果是初始满状态 (0-100)，用户点击通常是为了设置门槛，所以强制动 Min
-    // 2. 如果不是满状态，则谁离鼠标点击位置近，就动谁
     if (min === 0 && max === 100) {
       filters.minRelevanceScore = val;
     } else {
@@ -50,18 +45,14 @@
       }
     }
 
-    // 最后的安全检查：防止交叉
     if (filters.minRelevanceScore > filters.maxRelevanceScore) {
-       // 如果发生了交叉，交换数值，确保 min < max
        const temp = filters.minRelevanceScore;
        filters.minRelevanceScore = filters.maxRelevanceScore;
        filters.maxRelevanceScore = temp;
     }
   }
 
-  // 计算中间蓝色条的位置
   $: rangeStyle = `left: ${filters.minRelevanceScore}%; right: ${100 - filters.maxRelevanceScore}%;`;
-  // ----------------------
 
   type SortField = 'xpu_relevance_score' | 'number' | 'created_at' | null;
   type SortDirection = 'asc' | 'desc';
@@ -95,12 +86,6 @@
     } else {
       return 'text-slate-700 bg-slate-50 border-slate-200';
     }
-  }
-
-  function truncateText(text: string, maxLength: number): string {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
   }
 
   function getTypeBadgeClass(type: string): string {
