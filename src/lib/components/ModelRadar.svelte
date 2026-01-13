@@ -1,32 +1,66 @@
 <script lang="ts">
-  import ModelList from './ModelList.svelte';
-  import ModelRadarChart from './ModelRadarChart.svelte';
-  import LoadingState from './LoadingState.svelte';
-  import { hfModelsLoading, hfModelsError, hfModels } from '$lib/stores/appStore';
-  import { Cpu, BarChart3, Database, AlertCircle, Heart, Download, TrendingUp, CheckCircle } from 'lucide-svelte';
+  import ModelList from "./ModelList.svelte";
+  import ModelRadarChart from "./ModelRadarChart.svelte";
+  import LoadingState from "./LoadingState.svelte";
+  import {
+    hfModelsLoading,
+    hfModelsError,
+    hfModels,
+  } from "$lib/stores/appStore";
+  import {
+    Cpu,
+    BarChart3,
+    Database,
+    AlertCircle,
+    Heart,
+    Download,
+    TrendingUp,
+    CheckCircle,
+  } from "lucide-svelte";
 
   const modelSteps = [
-    { icon: Database, label: 'Fetching models from API...', color: 'text-blue-600' },
-    { icon: Cpu, label: 'Analyzing compatibility metrics...', color: 'text-green-600' },
-    { icon: BarChart3, label: 'Processing performance data...', color: 'text-orange-600' }
+    {
+      icon: Database,
+      label: "Fetching models from API...",
+      color: "text-blue-600",
+    },
+    {
+      icon: Cpu,
+      label: "Analyzing compatibility metrics...",
+      color: "text-green-600",
+    },
+    {
+      icon: BarChart3,
+      label: "Processing performance data...",
+      color: "text-orange-600",
+    },
   ];
 
   $: stats = {
     total: $hfModels.length,
-    xpuSupported: $hfModels.filter(m => {
-      const status = m.rawData?.xpu?.status?.toLowerCase() || '';
-      return status.includes('support') && !status.includes('not') && !status.includes('un');
+    xpuSupported: $hfModels.filter((m) => {
+      const status = m.rawData?.xpu?.status?.toLowerCase() || "";
+      return (
+        status.includes("support") &&
+        !status.includes("not") &&
+        !status.includes("un")
+      );
     }).length,
-    totalLikes: $hfModels.reduce((sum, m) => sum + (m.rawData?.likes || 0), 0),
-    totalDownloads: $hfModels.reduce((sum, m) => sum + (m.rawData?.downloads || 0), 0),
-    avgTrending: $hfModels.length > 0
-      ? ($hfModels.reduce((sum, m) => sum + (m.trendingScore || 0), 0) / $hfModels.length).toFixed(1)
-      : '0.0'
+    xpuUnsupported:
+      $hfModels.length -
+      $hfModels.filter((m) => {
+        const status = m.rawData?.xpu?.status?.toLowerCase() || "";
+        return (
+          status.includes("support") &&
+          !status.includes("not") &&
+          !status.includes("un")
+        );
+      }).length,
   };
 
   function formatNumber(num: number): string {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
     return num.toString();
   }
 </script>
@@ -41,60 +75,99 @@
   <div class="flex items-center justify-center h-96">
     <div class="text-center space-y-4 max-w-md">
       <AlertCircle class="w-16 h-16 text-red-500 mx-auto" />
-      <h3 class="text-xl font-semibold text-slate-800">Failed to Load Models</h3>
+      <h3 class="text-xl font-semibold text-slate-800">
+        Failed to Load Models
+      </h3>
       <p class="text-slate-600">{$hfModelsError}</p>
     </div>
   </div>
 {:else}
-  <div class="space-y-6 max-w-[1600px] mx-auto transition-opacity duration-300">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg">
-        <div class="flex items-center justify-between mb-3">
-          <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-            <Database class="w-5 h-5" />
+  <div class="space-y-8 max-w-[1600px] mx-auto">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <!-- Total Models -->
+      <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-indigo-500">Total Models</div>
+            <div class="mt-1 text-3xl font-semibold text-indigo-900">
+              {stats.total}
+            </div>
           </div>
-          <span class="text-2xl font-bold">{stats.total}</span>
-        </div>
-        <div class="text-blue-100 text-sm font-medium">Total Models</div>
-      </div>
-
-      <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white shadow-lg">
-        <div class="flex items-center justify-between mb-3">
-          <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-            <CheckCircle class="w-5 h-5" />
+          <div class="p-3 rounded-xl bg-indigo-100 text-indigo-600">
+            <Database class="w-6 h-6" />
           </div>
-          <span class="text-2xl font-bold">{stats.xpuSupported}</span>
-        </div>
-        <div class="text-green-100 text-sm font-medium">XPU Supported</div>
-        <div class="mt-2 flex items-center gap-2">
-          <div class="flex-1 bg-white/20 rounded-full h-1.5">
-            <div class="bg-white rounded-full h-1.5 transition-all" style="width: {stats.total > 0 ? (stats.xpuSupported / stats.total * 100) : 0}%"></div>
-          </div>
-          <span class="text-xs font-semibold">{stats.total > 0 ? Math.round(stats.xpuSupported / stats.total * 100) : 0}%</span>
         </div>
       </div>
 
-      <div class="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-5 text-white shadow-lg">
-        <div class="flex items-center justify-between mb-3">
-          <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-            <Heart class="w-5 h-5" />
+      <!-- XPU Supported -->
+      <div class="rounded-2xl bg-emerald-50 border border-emerald-100 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-emerald-600">
+              XPU Supported
+            </div>
+            <div class="mt-1 text-3xl font-semibold text-emerald-900">
+              {stats.xpuSupported}
+            </div>
           </div>
-          <span class="text-2xl font-bold">{formatNumber(stats.totalLikes)}</span>
+          <div class="p-3 rounded-xl bg-emerald-100 text-emerald-600">
+            <CheckCircle class="w-6 h-6" />
+          </div>
         </div>
-        <div class="text-pink-100 text-sm font-medium">Total Likes</div>
+
+        <div class="mt-4">
+          <div class="h-2.5 rounded-full bg-emerald-100 overflow-hidden">
+            <div
+              class="h-full bg-emerald-500 transition-all"
+              style="width: {stats.total > 0
+                ? (stats.xpuSupported / stats.total) * 100
+                : 0}%"
+            />
+          </div>
+          <div class="mt-1 text-xs text-emerald-700 font-medium">
+            {stats.total > 0
+              ? Math.round((stats.xpuSupported / stats.total) * 100)
+              : 0}% supported
+          </div>
+        </div>
       </div>
 
-      <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 text-white shadow-lg">
-        <div class="flex items-center justify-between mb-3">
-          <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-            <Download class="w-5 h-5" />
+      <!-- XPU Unsupported -->
+      <div class="rounded-2xl bg-amber-50 border border-amber-100 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-amber-600">
+              XPU Unsupported
+            </div>
+            <div class="mt-1 text-3xl font-semibold text-amber-900">
+              {stats.xpuUnsupported}
+            </div>
           </div>
-          <span class="text-2xl font-bold">{formatNumber(stats.totalDownloads)}</span>
+          <div class="p-3 rounded-xl bg-amber-100 text-amber-600">
+            <AlertCircle class="w-6 h-6" />
+          </div>
         </div>
-        <div class="text-orange-100 text-sm font-medium">Total Downloads</div>
+
+        <div class="mt-4">
+          <div class="h-2.5 rounded-full bg-amber-100 overflow-hidden">
+            <div
+              class="h-full bg-amber-500 transition-all"
+              style="width: {stats.total > 0
+                ? (stats.xpuUnsupported / stats.total) * 100
+                : 0}%"
+            />
+          </div>
+          <div class="mt-1 text-xs text-amber-700 font-medium">
+            {stats.total > 0
+              ? Math.round((stats.xpuUnsupported / stats.total) * 100)
+              : 0}% unsupported
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- Main Content -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-5">
         <ModelList />
