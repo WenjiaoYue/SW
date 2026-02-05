@@ -4,6 +4,9 @@
   import RepoOverview from './lib/components/RepoOverview.svelte';
   import ModelRadar from './lib/components/ModelRadar.svelte';
   import TritonKernel from './lib/components/TritonKernel.svelte';
+  import PotentialIssues from './lib/components/PotentialIssues.svelte';
+  import RepoFix from './lib/components/RepoFix.svelte';
+  import XPUSync from './lib/components/XPUSync.svelte';
   import ChatWidget from './lib/components/ChatWidget.svelte';
   import { currentView } from './lib/stores/appStore';
 </script>
@@ -26,6 +29,18 @@
       {:else if $currentView === 'triton'}
         <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'triton'}>
           <TritonKernel />
+        </div>
+      {:else if $currentView === 'issues'}
+        <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'issues'}>
+          <PotentialIssues />
+        </div>
+      {:else if $currentView === 'fixes'}
+        <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'fixes'}>
+          <RepoFix />
+        </div>
+      {:else if $currentView === 'sync'}
+        <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'sync'}>
+          <XPUSync />
         </div>
       {/if}
     </main>

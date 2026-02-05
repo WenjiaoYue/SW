@@ -522,3 +522,324 @@ export async function fetchTritonOps(): Promise<TritonOpsResponse> {
     }, 500);
   });
 }
+
+export interface PotentialIssue {
+  op_name: string;
+  category: string;
+  severity: string;
+  details: string[];
+  cuda_dtypes: string[];
+  xpu_dtypes: string[];
+  recommendation: string[];
+  cuda_file: string | null;
+  xpu_file: string | null;
+}
+
+export interface PotentialIssuesRequest {
+  date: string;
+}
+
+export interface PotentialIssuesResponse {
+  data: PotentialIssue[];
+}
+
+const MOCK_POTENTIAL_ISSUES: PotentialIssuesResponse = {
+  data: [
+    {
+      op_name: "baddbmm.dtype",
+      category: "validation_gap",
+      severity: "high",
+      details: [
+        "1. The XPU implementation performs only minimal dtype validation behavior with non-standard memory layouts.",
+        "2. CUDA implementation includes additional boundary checks for tensor dimensions."
+      ],
+      cuda_dtypes: ["float32", "float16", "bfloat16"],
+      xpu_dtypes: ["float32", "float16"],
+      recommendation: [
+        "1. Enhance the XPU implementation's dtype validation by incorporating the full set of checks performed before calling `xpu::baddbmm_out`.",
+        "2. Add comprehensive test coverage for edge cases with non-standard memory layouts."
+      ],
+      cuda_file: "aten/src/ATen/native/cuda/Blas.cu",
+      xpu_file: "src/ATen/native/xpu/sycl/BlasKernels.cpp"
+    },
+    {
+      op_name: "scaled_dot_product_attention",
+      category: "performance_gap",
+      severity: "medium",
+      details: [
+        "1. XPU implementation uses a generic kernel path for certain input configurations.",
+        "2. CUDA utilizes Flash Attention optimizations for better memory efficiency."
+      ],
+      cuda_dtypes: ["float32", "float16", "bfloat16"],
+      xpu_dtypes: ["float32", "float16"],
+      recommendation: [
+        "1. Implement Flash Attention optimizations for XPU backend.",
+        "2. Add specialized kernel paths for common input patterns."
+      ],
+      cuda_file: "aten/src/ATen/native/cuda/sdpa.cu",
+      xpu_file: "src/ATen/native/xpu/sycl/AttentionKernels.cpp"
+    },
+    {
+      op_name: "group_norm",
+      category: "validation_gap",
+      severity: "critical",
+      details: [
+        "1. Missing input validation for group count divisibility.",
+        "2. No checks for negative tensor dimensions in XPU implementation."
+      ],
+      cuda_dtypes: ["float32", "float16"],
+      xpu_dtypes: ["float32"],
+      recommendation: [
+        "1. Add input validation to ensure number of channels is divisible by number of groups.",
+        "2. Implement dimension validation checks before kernel launch."
+      ],
+      cuda_file: "aten/src/ATen/native/cuda/group_norm.cu",
+      xpu_file: "src/ATen/native/xpu/sycl/NormalizationKernels.cpp"
+    }
+  ]
+};
+
+export async function fetchPotentialIssues(request: PotentialIssuesRequest): Promise<PotentialIssuesResponse> {
+  const apiUrl = 'http://127.0.0.1:8000/get_report';
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch potential issues');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.warn('API call failed, using mock data:', error);
+    return MOCK_POTENTIAL_ISSUES;
+  }
+}
+
+export interface RepoFixIssue {
+  file: string;
+  line: number;
+  code: string;
+  severity: string;
+  category: string;
+  reason: string;
+  suggestion: string;
+  cuda_validated: boolean;
+  cuda_has_same_issue: boolean | null;
+  adjusted_severity: string | null;
+  validation_reason: string;
+  op_name: string | null;
+  cuda_file: string | null;
+  cuda_function: string | null;
+  scanned_at: string;
+}
+
+const MOCK_REPO_FIXES: RepoFixIssue[] = [
+  {
+    file: "/home/sdp/jyz/torch-xpu-ops/src/ATen/native/xpu/sycl/BatchNormKernels.cpp",
+    line: 65,
+    code: "(self.is_contiguous() && self.strides()[1] == 1)",
+    severity: "critical",
+    category: "ptr-calc",
+    reason: "Out-of-bounds stride access: self.strides()[1] can crash on 0D, 1D, or 2D tensors.",
+    suggestion: "Add a dimension guard before accessing strides: (self.ndimension() >= 2 && self.is_contiguous() && self.strides()[1] == 1)",
+    cuda_validated: false,
+    cuda_has_same_issue: null,
+    adjusted_severity: null,
+    validation_reason: "",
+    op_name: "batch_norm",
+    cuda_file: null,
+    cuda_function: null,
+    scanned_at: "2026-02-03T07:12:25.082268+00:00"
+  },
+  {
+    file: "/home/sdp/jyz/torch-xpu-ops/src/ATen/native/xpu/sycl/IndexKernels.cpp",
+    line: 120,
+    code: "auto ptr = data + offset;",
+    severity: "high",
+    category: "ptr-calc",
+    reason: "Potential pointer overflow in offset calculation.",
+    suggestion: "Use safe_math or check offset limits before pointer arithmetic.",
+    cuda_validated: true,
+    cuda_has_same_issue: false,
+    adjusted_severity: "medium",
+    validation_reason: "CUDA handles this with specific guard bands in the kernel launch logic.",
+    op_name: "index_select",
+    cuda_file: "IndexKernels.cu",
+    cuda_function: "index_select_kernel",
+    scanned_at: "2026-02-04T09:30:00.000000+00:00"
+  },
+  {
+    file: "/home/sdp/jyz/torch-xpu-ops/src/ATen/native/xpu/sycl/ConvolutionKernels.cpp",
+    line: 234,
+    code: "input.data_ptr<float>() + batch_offset",
+    severity: "medium",
+    category: "ptr-calc",
+    reason: "Unchecked pointer offset calculation may lead to out-of-bounds access.",
+    suggestion: "Validate batch_offset is within tensor bounds before performing pointer arithmetic.",
+    cuda_validated: true,
+    cuda_has_same_issue: true,
+    adjusted_severity: "medium",
+    validation_reason: "Both CUDA and XPU have this pattern. Consider fixing in both implementations.",
+    op_name: "conv2d",
+    cuda_file: "ConvolutionKernels.cu",
+    cuda_function: "conv2d_forward_kernel",
+    scanned_at: "2026-02-04T10:15:00.000000+00:00"
+  },
+  {
+    file: "/home/sdp/jyz/torch-xpu-ops/src/ATen/native/xpu/sycl/ActivationKernels.cpp",
+    line: 89,
+    code: "result[idx] = input[idx] * scale;",
+    severity: "low",
+    category: "logic",
+    reason: "Missing boundary check for idx before array access.",
+    suggestion: "Add bounds checking: if (idx < input.numel()) { result[idx] = input[idx] * scale; }",
+    cuda_validated: false,
+    cuda_has_same_issue: null,
+    adjusted_severity: null,
+    validation_reason: "",
+    op_name: "relu",
+    cuda_file: null,
+    cuda_function: null,
+    scanned_at: "2026-02-05T08:00:00.000000+00:00"
+  }
+];
+
+export async function fetchRepoFixes(): Promise<RepoFixIssue[]> {
+  const apiUrl = 'http://127.0.0.1:8000/get_scan_results';
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch repo fixes');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.warn('API call failed, using mock data:', error);
+    return MOCK_REPO_FIXES;
+  }
+}
+
+export interface XPUSyncIssue {
+  file: string;
+  line: number;
+  code: string;
+  severity: string;
+  category: string;
+  reason: string;
+  suggestion: string;
+  cuda_validated: boolean;
+  cuda_has_same_issue: boolean | null;
+  adjusted_severity: string | null;
+  validation_reason: string;
+  op_name: string | null;
+  cuda_file: string | null;
+  cuda_function: string | null;
+  scanned_at: string;
+}
+
+const MOCK_XPU_SYNC: XPUSyncIssue[] = [
+  {
+    file: "/home/sdp/jyz/torch-xpu-ops/src/ATen/native/xpu/sycl/BatchNormKernels.cpp",
+    line: 65,
+    code: "(self.is_contiguous() && self.strides()[1] == 1)",
+    severity: "critical",
+    category: "ptr-calc",
+    reason: "Out-of-bounds stride access: self.strides()[1] can crash on 0D, 1D, or 2D tensors.",
+    suggestion: "Add a dimension guard before accessing strides: (self.ndimension() >= 2)",
+    cuda_validated: false,
+    cuda_has_same_issue: null,
+    adjusted_severity: null,
+    validation_reason: "",
+    op_name: null,
+    cuda_file: null,
+    cuda_function: null,
+    scanned_at: "2026-02-03T07:12:25.082268+00:00"
+  },
+  {
+    file: "/home/sdp/jyz/torch-xpu-ops/src/ATen/native/xpu/sycl/IndexKernels.cpp",
+    line: 120,
+    code: "auto ptr = data + offset;",
+    severity: "high",
+    category: "ptr-calc",
+    reason: "Potential pointer overflow in offset calculation.",
+    suggestion: "Use safe_math or check offset limits.",
+    cuda_validated: true,
+    cuda_has_same_issue: false,
+    adjusted_severity: "medium",
+    validation_reason: "CUDA handles this with specific guard bands.",
+    op_name: "index_select",
+    cuda_file: "IndexKernels.cu",
+    cuda_function: "index_select_kernel",
+    scanned_at: "2026-02-04T09:30:00.000000+00:00"
+  },
+  {
+    file: "/home/sdp/jyz/torch-xpu-ops/src/ATen/native/xpu/sycl/MemoryKernels.cpp",
+    line: 78,
+    code: "memcpy(dst_ptr, src_ptr, size * sizeof(float));",
+    severity: "medium",
+    category: "ptr-calc",
+    reason: "Potential buffer overflow if size is not validated against allocation size.",
+    suggestion: "Add size validation: assert(size <= allocated_size) before memcpy.",
+    cuda_validated: true,
+    cuda_has_same_issue: false,
+    adjusted_severity: "low",
+    validation_reason: "CUDA version includes size validation in the calling function.",
+    op_name: "copy_",
+    cuda_file: "MemoryKernels.cu",
+    cuda_function: "copy_kernel",
+    scanned_at: "2026-02-04T11:45:00.000000+00:00"
+  },
+  {
+    file: "/home/sdp/jyz/torch-xpu-ops/src/ATen/native/xpu/sycl/ReduceKernels.cpp",
+    line: 156,
+    code: "output[out_idx] = partial_sum[thread_id];",
+    severity: "high",
+    category: "ptr-calc",
+    reason: "Race condition in reduction phase without proper synchronization.",
+    suggestion: "Add barrier synchronization: item.barrier(sycl::access::fence_space::local_space) before write.",
+    cuda_validated: true,
+    cuda_has_same_issue: false,
+    adjusted_severity: "high",
+    validation_reason: "CUDA uses __syncthreads() for proper synchronization.",
+    op_name: "sum",
+    cuda_file: "ReduceKernels.cu",
+    cuda_function: "reduce_sum_kernel",
+    scanned_at: "2026-02-05T06:20:00.000000+00:00"
+  }
+];
+
+export async function fetchXPUSync(): Promise<XPUSyncIssue[]> {
+  const apiUrl = 'http://127.0.0.1:8000/get_ptr_scan';
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch XPU sync issues');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.warn('API call failed, using mock data:', error);
+    return MOCK_XPU_SYNC;
+  }
+}

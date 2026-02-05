@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { GitBranch, Radar, BookOpen, Cpu } from 'lucide-svelte';
+  import { GitBranch, Radar, BookOpen, Cpu, AlertTriangle, Wrench, RefreshCw } from 'lucide-svelte';
   import { currentView } from '$lib/stores/appStore';
+  import type { ViewType } from '$lib/stores/appStore';
 
-  function switchView(view: 'repo' | 'model' | 'triton') {
+  function switchView(view: ViewType) {
     currentView.set(view);
   }
 </script>
@@ -35,7 +36,7 @@
       class:active={$currentView === 'model'}
     >
       <Radar class="w-4 h-4 mr-3" />
-      <span class="text-sm">Model List</span>
+      <span class="text-sm">Model Radar</span>
     </button>
 
     <button
@@ -45,6 +46,33 @@
     >
       <Cpu class="w-4 h-4 mr-3" />
       <span class="text-sm">Triton Kernel</span>
+    </button>
+
+    <button
+      on:click={() => switchView('issues')}
+      class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+      class:active={$currentView === 'issues'}
+    >
+      <AlertTriangle class="w-4 h-4 mr-3" />
+      <span class="text-sm">Potential Issues</span>
+    </button>
+
+    <button
+      on:click={() => switchView('fixes')}
+      class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+      class:active={$currentView === 'fixes'}
+    >
+      <Wrench class="w-4 h-4 mr-3" />
+      <span class="text-sm">Repo Fix</span>
+    </button>
+
+    <button
+      on:click={() => switchView('sync')}
+      class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+      class:active={$currentView === 'sync'}
+    >
+      <RefreshCw class="w-4 h-4 mr-3" />
+      <span class="text-sm">XPU Sync</span>
     </button>
   </nav>
 
