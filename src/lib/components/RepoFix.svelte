@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { repoFixes, repoFixesLoading, repoFixesError } from '$lib/stores/appStore';
+  import { repoFixes, repoFixesLoading, repoFixesError, currentProject } from '$lib/stores/appStore';
   import { fetchRepoFixes } from '$lib/services/api';
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
@@ -55,13 +55,27 @@
     low: CheckCircle
   };
 
-  onMount(async () => {
+  async function loadData() {
     repoFixesLoading.set(true);
     repoFixesError.set(null);
 
-    const data = await fetchRepoFixes();
-    repoFixes.set(data);
-    repoFixesLoading.set(false);
+    try {
+      const data = await fetchRepoFixes({
+        severity: selectedSeverity !== 'All' ? selectedSeverity : undefined,
+        category: selectedCategory !== 'All' ? selectedCategory : undefined,
+        page: currentPage,
+        page_size: itemsPerPage
+      });
+      repoFixes.set(data.data);
+    } catch (error: any) {
+      repoFixesError.set(error.message || 'Failed to load data');
+    } finally {
+      repoFixesLoading.set(false);
+    }
+  }
+
+  onMount(() => {
+    loadData();
   });
 
   function getSeverityIcon(severity: string) {

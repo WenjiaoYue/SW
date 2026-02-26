@@ -6,9 +6,12 @@
   import type { TritonOp } from '$lib/services/api';
   import LoadingState from './LoadingState.svelte';
   import TritonInsights from './TritonInsights.svelte';
+  import Pagination from './Pagination.svelte';
 
   let expandedOpMap: { [key: string]: boolean } = {};
   let showFilters = false;
+  let currentPage = 1;
+  let itemsPerPage = 10;
 
   let filters = {
     status: [] as string[],
@@ -141,6 +144,17 @@
 
     return filtered;
   })();
+
+  $: paginatedOps = filteredOps.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  function handlePageChange(page: number) {
+    currentPage = page;
+  }
+
+  function handleItemsPerPageChange(newItemsPerPage: number) {
+    itemsPerPage = newItemsPerPage;
+    currentPage = 1;
+  }
 
   function toggleFilter(filterType: 'status' | 'category', value: string) {
     const currentFilters = filters[filterType];
@@ -371,7 +385,7 @@
           </div>
         {:else}
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {#each filteredOps as op}
+            {#each paginatedOps as op}
               {@const CategoryIcon = getCategoryIcon(op.high_level_category)}
               <div class="group relative bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all overflow-hidden">
                 <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b {getCategoryColor(op.high_level_category)}"></div>
@@ -498,6 +512,18 @@
               </div>
             {/each}
           </div>
+
+          {#if filteredOps.length > 0}
+            <div class="mt-4">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredOps.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
+          {/if}
         {/if}
       </div>
     </div>

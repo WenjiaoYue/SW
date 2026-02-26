@@ -5,6 +5,7 @@
   import { fetchTritonInsights } from '$lib/services/api';
   import type { TritonInsight } from '$lib/services/api';
   import LoadingState from './LoadingState.svelte';
+  import Pagination from './Pagination.svelte';
   import { marked } from 'marked';
 
   export let repo = 'pytorch/pytorch';
@@ -221,6 +222,15 @@
 
   function goToPage(page: number) {
     currentPage = Math.max(1, Math.min(page, totalPages));
+  }
+
+  function handlePageChange(page: number) {
+    currentPage = page;
+  }
+
+  function handleItemsPerPageChange(newItemsPerPage: number) {
+    itemsPerPage = newItemsPerPage;
+    currentPage = 1;
   }
 
   const loadingSteps = [
@@ -623,46 +633,15 @@
             {/each}
           </div>
 
-          {#if totalPages > 1}
-            <div class="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
-              <div class="text-xs text-slate-600">
-                Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredInsights.length)} of {filteredInsights.length}
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  on:click={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                  <ChevronLeft class="w-4 h-4" />
-                </button>
-                <div class="flex gap-1">
-                  {#each Array.from({length: Math.min(5, totalPages)}, (_, i) => {
-                    const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
-                    return start + i;
-                  }) as page}
-                    <button
-                      on:click={() => goToPage(page)}
-                      class="px-3 py-1.5 text-xs font-medium rounded-lg border transition"
-                      class:bg-blue-600={currentPage === page}
-                      class:text-white={currentPage === page}
-                      class:border-blue-600={currentPage === page}
-                      class:bg-white={currentPage !== page}
-                      class:border-slate-200={currentPage !== page}
-                      class:hover:bg-slate-50={currentPage !== page}
-                    >
-                      {page}
-                    </button>
-                  {/each}
-                </div>
-                <button
-                  on:click={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                  <ChevronRight class="w-4 h-4" />
-                </button>
-              </div>
+          {#if filteredInsights.length > 0}
+            <div class="mt-4">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredInsights.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
             </div>
           {/if}
         {/if}

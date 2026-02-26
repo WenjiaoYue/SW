@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { potentialIssues, potentialIssuesLoading, potentialIssuesError } from '$lib/stores/appStore';
+  import { potentialIssues, potentialIssuesLoading, potentialIssuesError, currentProject } from '$lib/stores/appStore';
   import { fetchPotentialIssues } from '$lib/services/api';
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
@@ -22,7 +22,7 @@
     const matchesCategory = selectedCategory === 'All' || issue.category === selectedCategory;
     const matchesSearch = !searchQuery ||
       issue.op_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      issue.details.some(d => d.toLowerCase().includes(searchQuery.toLowerCase()));
+      issue.details.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSeverity && matchesCategory && matchesSearch;
   });
 
@@ -56,7 +56,11 @@
     potentialIssuesError.set(null);
 
     try {
-      const data = await fetchPotentialIssues({ date: selectedDate });
+      const data = await fetchPotentialIssues({
+        date: selectedDate,
+        page: currentPage,
+        page_size: itemsPerPage
+      });
       potentialIssues.set(data.data);
     } catch (error: any) {
       potentialIssuesError.set(error.message || 'Failed to load data');
@@ -194,31 +198,17 @@
                   </div>
                 </div>
 
-                {#if issue.details && issue.details.length > 0}
+                {#if issue.details}
                   <div class="space-y-1">
                     <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Details</h4>
-                    <ul class="space-y-1 text-sm text-slate-600">
-                      {#each issue.details as detail}
-                        <li class="flex items-start gap-2">
-                          <span class="text-slate-400 mt-1">•</span>
-                          <span>{detail}</span>
-                        </li>
-                      {/each}
-                    </ul>
+                    <p class="text-sm text-slate-600">{issue.details}</p>
                   </div>
                 {/if}
 
-                {#if issue.recommendation && issue.recommendation.length > 0}
+                {#if issue.recommendation}
                   <div class="space-y-1">
-                    <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Recommendations</h4>
-                    <ul class="space-y-1 text-sm text-slate-600">
-                      {#each issue.recommendation as rec}
-                        <li class="flex items-start gap-2">
-                          <span class="text-green-500 mt-1">✓</span>
-                          <span>{rec}</span>
-                        </li>
-                      {/each}
-                    </ul>
+                    <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Recommendation</h4>
+                    <p class="text-sm text-slate-600">{issue.recommendation}</p>
                   </div>
                 {/if}
 
