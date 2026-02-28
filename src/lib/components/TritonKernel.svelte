@@ -516,11 +516,11 @@
           {#if filteredOps.length > 0}
             <div class="mt-4">
               <Pagination
-                currentPage={currentPage}
+                {currentPage}
                 totalItems={filteredOps.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-                onItemsPerPageChange={handleItemsPerPageChange}
+                {itemsPerPage}
+                on:pageChange={(e) => handlePageChange(e.detail)}
+                on:itemsPerPageChange={(e) => handleItemsPerPageChange(e.detail)}
               />
             </div>
           {/if}

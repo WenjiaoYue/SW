@@ -270,11 +270,11 @@
 
     {#if totalItems > 0}
       <Pagination
-        currentPage={currentPage}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        onPageChange={handlePageChange}
-        onItemsPerPageChange={handleItemsPerPageChange}
+        {currentPage}
+        {totalItems}
+        {itemsPerPage}
+        on:pageChange={(e) => handlePageChange(e.detail)}
+        on:itemsPerPageChange={(e) => handleItemsPerPageChange(e.detail)}
       />
     {/if}
   </div>

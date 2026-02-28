@@ -6,10 +6,7 @@
   export let totalItems = 0;
   export let itemsPerPage = 10;
 
-  const dispatch = createEventDispatcher<{
-    pageChange: number;
-    itemsPerPageChange: number;
-  }>();
+  const dispatch = createEventDispatcher();
 
   $: totalPages = Math.ceil(totalItems / itemsPerPage);
   $: startItem = (currentPage - 1) * itemsPerPage + 1;
@@ -25,7 +22,6 @@
     dispatch('itemsPerPageChange', newItemsPerPage);
   }
 
-  // 生成页码逻辑
   $: pageNumbers = (() => {
     const pages: (number | string)[] = [];
     const maxVisible = 7;
@@ -57,6 +53,7 @@
         pages.push(totalPages);
       }
     }
+
     return pages;
   })();
 </script>
@@ -110,7 +107,7 @@
             <span class="px-3 py-1.5 text-sm text-slate-400">...</span>
           {:else}
             <button
-              on:click={() => typeof page === 'number' && goToPage(page)}
+              on:click={() => goToPage(page)}
               class="min-w-[36px] px-3 py-1.5 text-sm rounded-lg border transition-colors"
               class:bg-blue-600={currentPage === page}
               class:text-white={currentPage === page}

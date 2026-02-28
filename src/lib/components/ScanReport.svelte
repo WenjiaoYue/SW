@@ -395,7 +395,6 @@
       <div class="border-t border-slate-200 bg-white px-6 py-3">
         <Pagination
           {currentPage}
-          {totalPages}
           {totalItems}
           {itemsPerPage}
           on:pageChange={(e) => handlePageChange(e.detail)}
