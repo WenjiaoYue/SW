@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { GitBranch, Radar, BookOpen, Cpu, AlertTriangle, Wrench, RefreshCw } from 'lucide-svelte';
+  import { GitBranch, Radar, BookOpen, Cpu, AlertTriangle, Wrench, RefreshCw, Shield } from 'lucide-svelte';
   import { currentView } from '$lib/stores/appStore';
   import type { ViewType } from '$lib/stores/appStore';
 
@@ -73,6 +73,15 @@
     >
       <RefreshCw class="w-4 h-4 mr-3" />
       <span class="text-sm">XPU Sync</span>
+    </button>
+
+    <button
+      on:click={() => switchView('scan')}
+      class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+      class:active={$currentView === 'scan'}
+    >
+      <Shield class="w-4 h-4 mr-3" />
+      <span class="text-sm">Scan Report</span>
     </button>
   </nav>
 

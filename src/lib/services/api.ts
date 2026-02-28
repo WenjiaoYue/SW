@@ -44,6 +44,7 @@ export interface HFModelsResponse { data: any[]; summary?: { markdown_report?: s
 export interface PotentialIssuesRequest { date?: string; page?: number; page_size?: number; }
 export interface RepoFixesRequest { severity?: string; category?: string; page?: number; page_size?: number; }
 export interface XPUSyncRequest { applicable?: boolean; category?: string; page?: number; page_size?: number; }
+export interface ScanReportRequest { status?: string; xpu_needs_fix?: boolean; risk?: string; page?: number; page_size?: number; }
 
 export const fetchGitHubTopics = (req: TopicRequest) => 
   request<APIResponse>(`${API_BASE}/github-hot-topics`, { method: 'POST', body: JSON.stringify(req) });
@@ -86,6 +87,15 @@ export async function fetchXPUSync(req: XPUSyncRequest) {
   }
 }
 
+export async function fetchScanReport(req: ScanReportRequest) {
+  try {
+    return await request<any>(withQuery(`${SCAN_BASE}/get_scan_report`, req), { method: 'GET' });
+  } catch (e) {
+    console.warn('ScanReport API failed, using Mock Data');
+    return MOCK_SCAN_REPORT_RESPONSE;
+  }
+}
+
 export const fetchTritonOps = (): Promise<{ ops: TritonOp[] }> => 
   new Promise(res => setTimeout(() => res({ ops: MOCK_TRITON_OPS }), 500));
 
@@ -101,3 +111,4 @@ const MOCK_TRITON_OPS: TritonOp[] = [
 const MOCK_POTENTIAL_ISSUES = { data: [], total: 0, page: 1, page_size: 1000 };
 const MOCK_REPO_FIXES_RESPONSE = { data: [], total: 0, page: 1, page_size: 1000 };
 const MOCK_XPU_SYNC_RESPONSE = { data: [], total: 0, page: 1, page_size: 1000 };
+const MOCK_SCAN_REPORT_RESPONSE = { data: [], total: 0, page: 1, page_size: 1000 };

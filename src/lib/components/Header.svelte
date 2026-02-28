@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronDown, Radar, Cpu, GitBranch, AlertTriangle, Wrench, RefreshCw } from 'lucide-svelte';
+  import { ChevronDown, Radar, Cpu, GitBranch, AlertTriangle, Wrench, RefreshCw, Shield } from 'lucide-svelte';
   import { currentView, currentProject } from '$lib/stores/appStore';
   import { PROJECTS } from '$lib/data/constants';
 
@@ -29,7 +29,8 @@
     triton: { icon: Cpu, title: 'Triton Kernel Operations', color: 'bg-purple-100 text-purple-700' },
     issues: { icon: AlertTriangle, title: 'Potential Issues', color: 'bg-orange-100 text-orange-700' },
     fixes: { icon: Wrench, title: 'Repo Fix', color: 'bg-teal-100 text-teal-700' },
-    sync: { icon: RefreshCw, title: 'CUDA Fix Analysis', color: 'bg-cyan-100 text-cyan-700' }
+    sync: { icon: RefreshCw, title: 'CUDA Fix Analysis', color: 'bg-cyan-100 text-cyan-700' },
+    scan: { icon: Shield, title: 'Scan Report', color: 'bg-indigo-100 text-indigo-700' }
   };
 
   $: currentConfig = viewConfig[$currentView];

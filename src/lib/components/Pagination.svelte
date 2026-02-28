@@ -1,11 +1,15 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
 
   export let currentPage = 1;
   export let totalItems = 0;
   export let itemsPerPage = 10;
-  export let onPageChange: (page: number) => void;
-  export let onItemsPerPageChange: (itemsPerPage: number) => void;
+
+  const dispatch = createEventDispatcher<{
+    pageChange: number;
+    itemsPerPageChange: number;
+  }>();
 
   $: totalPages = Math.ceil(totalItems / itemsPerPage);
   $: startItem = (currentPage - 1) * itemsPerPage + 1;
@@ -13,15 +17,15 @@
 
   function goToPage(page: number) {
     if (page >= 1 && page <= totalPages) {
-      onPageChange(page);
+      dispatch('pageChange', page);
     }
   }
 
   function changeItemsPerPage(newItemsPerPage: number) {
-    onItemsPerPageChange(newItemsPerPage);
-    goToPage(1);
+    dispatch('itemsPerPageChange', newItemsPerPage);
   }
 
+  // 生成页码逻辑
   $: pageNumbers = (() => {
     const pages: (number | string)[] = [];
     const maxVisible = 7;
@@ -53,7 +57,6 @@
         pages.push(totalPages);
       }
     }
-
     return pages;
   })();
 </script>
@@ -107,7 +110,7 @@
             <span class="px-3 py-1.5 text-sm text-slate-400">...</span>
           {:else}
             <button
-              on:click={() => goToPage(page)}
+              on:click={() => typeof page === 'number' && goToPage(page)}
               class="min-w-[36px] px-3 py-1.5 text-sm rounded-lg border transition-colors"
               class:bg-blue-600={currentPage === page}
               class:text-white={currentPage === page}

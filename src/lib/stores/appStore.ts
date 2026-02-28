@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { HFModel, PotentialIssue, RepoFixIssue, XPUSyncIssue } from '$lib/services/api';
 
-export type ViewType = 'repo' | 'model' | 'triton' | 'issues' | 'fixes' | 'sync';
+export type ViewType = 'repo' | 'model' | 'triton' | 'issues' | 'fixes' | 'sync' | 'scan';
 
 export interface ChatMessage {
   type: 'bot' | 'user';
@@ -67,6 +67,10 @@ export const xpuSyncIssues = writable<XPUSyncIssue[]>([]);
 export const xpuSyncLoading = writable(false);
 export const xpuSyncError = writable<string | null>(null);
 
+export const scanReports = writable<any[]>([]);
+export const scanReportsLoading = writable(false);
+export const scanReportsError = writable<string | null>(null);
+
 export const repoChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
@@ -109,6 +113,13 @@ export const syncChatMessages = writable<ChatMessage[]>([
   }
 ]);
 
+export const scanChatMessages = writable<ChatMessage[]>([
+  {
+    type: 'bot',
+    content: "Hello! I can help you analyze comprehensive scan reports with auto-verification status."
+  }
+]);
+
 export const currentChatMessages = derived(
   currentView,
   ($currentView) => {
@@ -118,6 +129,7 @@ export const currentChatMessages = derived(
     if ($currentView === 'issues') return issuesChatMessages;
     if ($currentView === 'fixes') return fixesChatMessages;
     if ($currentView === 'sync') return syncChatMessages;
+    if ($currentView === 'scan') return scanChatMessages;
     return repoChatMessages;
   }
 );

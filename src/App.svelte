@@ -7,6 +7,7 @@
   import PotentialIssues from './lib/components/PotentialIssues.svelte';
   import RepoFix from './lib/components/RepoFix.svelte';
   import XPUSync from './lib/components/XPUSync.svelte';
+  import ScanReport from './lib/components/ScanReport.svelte';
   import ChatWidget from './lib/components/ChatWidget.svelte';
   import { currentView } from './lib/stores/appStore';
 </script>
@@ -41,6 +42,10 @@
       {:else if $currentView === 'sync'}
         <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'sync'}>
           <XPUSync />
+        </div>
+      {:else if $currentView === 'scan'}
+        <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'scan'}>
+          <ScanReport />
         </div>
       {/if}
     </main>
