@@ -13,30 +13,26 @@
   let currentPage = 1;
   let itemsPerPage = 10;
 
-  $: uniqueCategories = ['All', ...new Set($xpuSyncIssues.map(i => i.category))];
+  $: availableCategories = ['All', ...Array.from(new Set($xpuSyncIssues.map((i: any) => i.category)))];
 
-  $: filteredIssues = $xpuSyncIssues.filter(issue => {
-    const matchesCategory = selectedCategory === 'All' || issue.category === selectedCategory;
-    const matchesSearch = !searchQuery ||
-      issue.commit_message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      issue.cuda_file.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      issue.details.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesApplicable = applicableFilter === 'All' ||
-      (applicableFilter === 'applicable' && issue.applicable) ||
-      (applicableFilter === 'not_applicable' && !issue.applicable);
-    return matchesCategory && matchesSearch && matchesApplicable;
+  $: filteredIssues = $xpuSyncIssues.filter((issue: any) => {
+    const categoryMatch = selectedCategory === 'All' || issue.category === selectedCategory;
+    const applicableMatch = applicableFilter === 'All' ||
+      (applicableFilter === 'applicable' && issue.applicable_to_repo) ||
+      (applicableFilter === 'not_applicable' && !issue.applicable_to_repo);
+    const searchMatch = !searchQuery ||
+      issue.commit_message?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      issue.file_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      issue.details?.toLowerCase().includes(searchQuery.toLowerCase());
+    return categoryMatch && applicableMatch && searchMatch;
   });
 
-  $: paginatedIssues = filteredIssues.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  function handlePageChange(page: number) {
-    currentPage = page;
-  }
-
-  function handleItemsPerPageChange(newItemsPerPage: number) {
-    itemsPerPage = newItemsPerPage;
-    currentPage = 1;
-  }
+  $: totalItems = filteredIssues.length;
+  $: totalPages = Math.ceil(totalItems / itemsPerPage);
+  $: paginatedIssues = filteredIssues.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   async function loadData() {
     xpuSyncLoading.set(true);
@@ -44,12 +40,10 @@
 
     try {
       const data = await fetchXPUSync({
-        applicable: applicableFilter === 'applicable' ? true : applicableFilter === 'not_applicable' ? false : undefined,
-        category: selectedCategory !== 'All' ? selectedCategory : undefined,
-        page: currentPage,
-        page_size: itemsPerPage
+        page: 1,
+        page_size: 1000
       });
-      xpuSyncIssues.set(data.data);
+      xpuSyncIssues.set(data.data || []);
     } catch (error: any) {
       xpuSyncError.set(error.message || 'Failed to load data');
     } finally {
@@ -60,6 +54,19 @@
   onMount(() => {
     loadData();
   });
+
+  function handlePageChange(page: number) {
+    currentPage = page;
+  }
+
+  function handleItemsPerPageChange(newItemsPerPage: number) {
+    itemsPerPage = newItemsPerPage;
+    currentPage = 1;
+  }
+
+  function handleFilterChange() {
+    currentPage = 1;
+  }
 
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -103,7 +110,7 @@
         </div>
         <div class="flex items-center gap-2 text-sm">
           <span class="text-slate-500">Total:</span>
-          <span class="font-semibold text-slate-800">{filteredIssues.length}</span>
+          <span class="font-semibold text-slate-800">{totalItems}</span>
         </div>
       </div>
 
@@ -111,6 +118,7 @@
         <input
           type="text"
           bind:value={searchQuery}
+          on:input={handleFilterChange}
           placeholder="Search by commit message, file, or details..."
           class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
@@ -119,9 +127,9 @@
           <div>
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Category</label>
             <div class="flex flex-wrap gap-2">
-              {#each uniqueCategories as category}
+              {#each availableCategories as category}
                 <button
-                  on:click={() => selectedCategory = category}
+                  on:click={() => { selectedCategory = category; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
                   class:bg-slate-800={selectedCategory === category}
                   class:text-white={selectedCategory === category}
@@ -141,7 +149,7 @@
             <div class="flex flex-wrap gap-2">
               {#each ['All', 'applicable', 'not_applicable'] as option}
                 <button
-                  on:click={() => applicableFilter = option}
+                  on:click={() => { applicableFilter = option; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
                   class:bg-slate-800={applicableFilter === option}
                   class:text-white={applicableFilter === option}
@@ -260,10 +268,10 @@
       </div>
     </div>
 
-    {#if filteredIssues.length > 0}
+    {#if totalItems > 0}
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredIssues.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
         onItemsPerPageChange={handleItemsPerPageChange}

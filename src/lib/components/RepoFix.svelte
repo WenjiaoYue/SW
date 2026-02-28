@@ -14,33 +14,6 @@
   let currentPage = 1;
   let itemsPerPage = 10;
 
-  $: uniqueSeverities = ['All', ...new Set($repoFixes.map(f => f.severity))];
-  $: uniqueCategories = ['All', ...new Set($repoFixes.map(f => f.category))];
-
-  $: filteredFixes = $repoFixes.filter(fix => {
-    const matchesSeverity = selectedSeverity === 'All' || fix.severity === selectedSeverity;
-    const matchesCategory = selectedCategory === 'All' || fix.category === selectedCategory;
-    const matchesSearch = !searchQuery ||
-      fix.file.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fix.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (fix.op_name && fix.op_name.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCudaValidated = cudaValidatedFilter === 'All' ||
-      (cudaValidatedFilter === 'validated' && fix.cuda_validated) ||
-      (cudaValidatedFilter === 'not_validated' && !fix.cuda_validated);
-    return matchesSeverity && matchesCategory && matchesSearch && matchesCudaValidated;
-  });
-
-  $: paginatedFixes = filteredFixes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  function handlePageChange(page: number) {
-    currentPage = page;
-  }
-
-  function handleItemsPerPageChange(newItemsPerPage: number) {
-    itemsPerPage = newItemsPerPage;
-    currentPage = 1;
-  }
-
   const severityColors: Record<string, string> = {
     critical: 'text-red-600 bg-red-50 border-red-200',
     high: 'text-orange-600 bg-orange-50 border-orange-200',
@@ -55,18 +28,40 @@
     low: CheckCircle
   };
 
+  $: availableSeverities = ['All', ...Array.from(new Set($repoFixes.map((f: any) => f.severity)))];
+  $: availableCategories = ['All', ...Array.from(new Set($repoFixes.map((f: any) => f.category)))];
+
+  $: filteredFixes = $repoFixes.filter((fix: any) => {
+    const severityMatch = selectedSeverity === 'All' || fix.severity === selectedSeverity;
+    const categoryMatch = selectedCategory === 'All' || fix.category === selectedCategory;
+    const cudaMatch = cudaValidatedFilter === 'All' ||
+      (cudaValidatedFilter === 'validated' && fix.cuda_validated) ||
+      (cudaValidatedFilter === 'not_validated' && !fix.cuda_validated);
+    const searchMatch = !searchQuery ||
+      fix.file_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fix.original_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fix.suggested_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fix.operation_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    return severityMatch && categoryMatch && cudaMatch && searchMatch;
+  });
+
+  $: totalItems = filteredFixes.length;
+  $: totalPages = Math.ceil(totalItems / itemsPerPage);
+  $: paginatedFixes = filteredFixes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   async function loadData() {
     repoFixesLoading.set(true);
     repoFixesError.set(null);
 
     try {
       const data = await fetchRepoFixes({
-        severity: selectedSeverity !== 'All' ? selectedSeverity : undefined,
-        category: selectedCategory !== 'All' ? selectedCategory : undefined,
-        page: currentPage,
-        page_size: itemsPerPage
+        page: 1,
+        page_size: 1000
       });
-      repoFixes.set(data.data);
+      repoFixes.set(data.data || []);
     } catch (error: any) {
       repoFixesError.set(error.message || 'Failed to load data');
     } finally {
@@ -77,6 +72,19 @@
   onMount(() => {
     loadData();
   });
+
+  function handlePageChange(page: number) {
+    currentPage = page;
+  }
+
+  function handleItemsPerPageChange(newItemsPerPage: number) {
+    itemsPerPage = newItemsPerPage;
+    currentPage = 1;
+  }
+
+  function handleFilterChange() {
+    currentPage = 1;
+  }
 
   function getSeverityIcon(severity: string) {
     return severityIcons[severity] || Info;
@@ -119,7 +127,7 @@
         </div>
         <div class="flex items-center gap-2 text-sm">
           <span class="text-slate-500">Total:</span>
-          <span class="font-semibold text-slate-800">{filteredFixes.length}</span>
+          <span class="font-semibold text-slate-800">{totalItems}</span>
         </div>
       </div>
 
@@ -127,6 +135,7 @@
         <input
           type="text"
           bind:value={searchQuery}
+          on:input={handleFilterChange}
           placeholder="Search by file, code, or operation name..."
           class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
@@ -135,9 +144,9 @@
           <div>
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Severity</label>
             <div class="flex flex-wrap gap-2">
-              {#each uniqueSeverities as severity}
+              {#each availableSeverities as severity}
                 <button
-                  on:click={() => selectedSeverity = severity}
+                  on:click={() => { selectedSeverity = severity; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
                   class:bg-slate-800={selectedSeverity === severity}
                   class:text-white={selectedSeverity === severity}
@@ -155,9 +164,9 @@
           <div>
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Category</label>
             <div class="flex flex-wrap gap-2">
-              {#each uniqueCategories as category}
+              {#each availableCategories as category}
                 <button
-                  on:click={() => selectedCategory = category}
+                  on:click={() => { selectedCategory = category; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
                   class:bg-slate-800={selectedCategory === category}
                   class:text-white={selectedCategory === category}
@@ -177,7 +186,7 @@
             <div class="flex flex-wrap gap-2">
               {#each ['All', 'validated', 'not_validated'] as option}
                 <button
-                  on:click={() => cudaValidatedFilter = option}
+                  on:click={() => { cudaValidatedFilter = option; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
                   class:bg-slate-800={cudaValidatedFilter === option}
                   class:text-white={cudaValidatedFilter === option}
@@ -293,10 +302,10 @@
       </div>
     </div>
 
-    {#if filteredFixes.length > 0}
+    {#if totalItems > 0}
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredFixes.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
         onItemsPerPageChange={handleItemsPerPageChange}

@@ -14,29 +14,6 @@
   let itemsPerPage = 10;
   let selectedDate: string = new Date().toISOString().split('T')[0];
 
-  $: uniqueSeverities = ['All', ...new Set($potentialIssues.map(i => i.severity))];
-  $: uniqueCategories = ['All', ...new Set($potentialIssues.map(i => i.category))];
-
-  $: filteredIssues = $potentialIssues.filter(issue => {
-    const matchesSeverity = selectedSeverity === 'All' || issue.severity === selectedSeverity;
-    const matchesCategory = selectedCategory === 'All' || issue.category === selectedCategory;
-    const matchesSearch = !searchQuery ||
-      issue.op_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      issue.details.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSeverity && matchesCategory && matchesSearch;
-  });
-
-  $: paginatedIssues = filteredIssues.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  function handlePageChange(page: number) {
-    currentPage = page;
-  }
-
-  function handleItemsPerPageChange(newItemsPerPage: number) {
-    itemsPerPage = newItemsPerPage;
-    currentPage = 1;
-  }
-
   const severityColors: Record<string, string> = {
     critical: 'text-red-600 bg-red-50 border-red-200',
     high: 'text-orange-600 bg-orange-50 border-orange-200',
@@ -51,6 +28,25 @@
     low: CheckCircle
   };
 
+  $: availableSeverities = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => i.severity)))];
+  $: availableCategories = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => i.category)))];
+
+  $: filteredIssues = $potentialIssues.filter((issue: any) => {
+    const severityMatch = selectedSeverity === 'All' || issue.severity === selectedSeverity;
+    const categoryMatch = selectedCategory === 'All' || issue.category === selectedCategory;
+    const searchMatch = !searchQuery ||
+      issue.operation_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      issue.details?.toLowerCase().includes(searchQuery.toLowerCase());
+    return severityMatch && categoryMatch && searchMatch;
+  });
+
+  $: totalItems = filteredIssues.length;
+  $: totalPages = Math.ceil(totalItems / itemsPerPage);
+  $: paginatedIssues = filteredIssues.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   async function loadData() {
     potentialIssuesLoading.set(true);
     potentialIssuesError.set(null);
@@ -58,10 +54,10 @@
     try {
       const data = await fetchPotentialIssues({
         date: selectedDate,
-        page: currentPage,
-        page_size: itemsPerPage
+        page: 1,
+        page_size: 1000
       });
-      potentialIssues.set(data.data);
+      potentialIssues.set(data.data || []);
     } catch (error: any) {
       potentialIssuesError.set(error.message || 'Failed to load data');
     } finally {
@@ -76,6 +72,19 @@
   async function handleDateChange() {
     currentPage = 1;
     await loadData();
+  }
+
+  function handlePageChange(page: number) {
+    currentPage = page;
+  }
+
+  function handleItemsPerPageChange(newItemsPerPage: number) {
+    itemsPerPage = newItemsPerPage;
+    currentPage = 1;
+  }
+
+  function handleFilterChange() {
+    currentPage = 1;
   }
 
   function getSeverityIcon(severity: string) {
@@ -119,7 +128,7 @@
           </div>
           <div class="flex items-center gap-2 text-sm">
             <span class="text-slate-500">Total:</span>
-            <span class="font-semibold text-slate-800">{filteredIssues.length}</span>
+            <span class="font-semibold text-slate-800">{totalItems}</span>
           </div>
         </div>
       </div>
@@ -128,6 +137,7 @@
         <input
           type="text"
           bind:value={searchQuery}
+          on:input={handleFilterChange}
           placeholder="Search by operation name or details..."
           class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
@@ -136,9 +146,9 @@
           <div class="flex-1">
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Severity</label>
             <div class="flex flex-wrap gap-2">
-              {#each uniqueSeverities as severity}
+              {#each availableSeverities as severity}
                 <button
-                  on:click={() => selectedSeverity = severity}
+                  on:click={() => { selectedSeverity = severity; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
                   class:bg-slate-800={selectedSeverity === severity}
                   class:text-white={selectedSeverity === severity}
@@ -156,9 +166,9 @@
           <div class="flex-1">
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Category</label>
             <div class="flex flex-wrap gap-2">
-              {#each uniqueCategories as category}
+              {#each availableCategories as category}
                 <button
-                  on:click={() => selectedCategory = category}
+                  on:click={() => { selectedCategory = category; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
                   class:bg-slate-800={selectedCategory === category}
                   class:text-white={selectedCategory === category}
@@ -233,10 +243,10 @@
       </div>
     </div>
 
-    {#if filteredIssues.length > 0}
+    {#if totalItems > 0}
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredIssues.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
         onItemsPerPageChange={handleItemsPerPageChange}
