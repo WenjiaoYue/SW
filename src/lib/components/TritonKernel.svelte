@@ -186,7 +186,7 @@
   $: hasActiveFilters = filters.status.length > 0 || filters.category.length > 0 || filters.minConfidence > 0 || filters.hasXPUFunc !== null;
 
   const loadingSteps = [
-    { icon: Code, label: 'Fetching Triton kernel operations...', color: 'text-purple-600' },
+    { icon: Code, label: 'Fetching Cuda to Triton ...', color: 'text-purple-600' },
     { icon: Code, label: 'Analyzing op compatibility...', color: 'text-blue-600' },
     { icon: Code, label: 'Loading metadata...', color: 'text-green-600' }
   ];
@@ -196,7 +196,7 @@
   <TritonInsights repo="pytorch/pytorch" days={7} maxCommits={5} />
 {:else if $tritonOpsLoading}
   <LoadingState
-    title="Loading Triton Kernel Operations"
+    title="Loading Cuda to Triton "
     footerText="Fetching operation definitions and compatibility data. Please wait..."
     steps={loadingSteps}
   />

@@ -5,7 +5,7 @@
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
   import Pagination from './Pagination.svelte';
-  import { AlertTriangle, CheckCircle, XCircle, Info, FileCode, GitCommit, Shield } from 'lucide-svelte';
+  import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Info, FileCode, GitCommitVertical as GitCommit, Shield } from 'lucide-svelte';
 
   let selectedStatus: string = 'All';
   let selectedRisk: string = 'All';
@@ -121,34 +121,23 @@
     message={$scanReportsError}
   />
 {:else}
-  <div class="h-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
-    <div class="flex-1 overflow-auto px-6 py-5">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-4">
-        <div class="flex items-center justify-between mb-1">
-          <div class="flex items-center gap-3">
-            <Shield class="w-5 h-5 text-slate-700" />
-            <h2 class="text-lg font-bold text-slate-800">Scan Report</h2>
-          </div>
-          <div class="text-sm text-slate-600">
-            Total: <span class="font-semibold text-slate-800">{totalItems}</span>
-          </div>
+  <div class="space-y-6">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <div class="flex items-center gap-4 mb-6">
+        <input
+          type="text"
+          bind:value={searchQuery}
+          on:input={handleFilterChange}
+          placeholder="Search by title, commit, author, or summary..."
+          class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
+        />
+        <div class="flex items-center gap-2 text-sm whitespace-nowrap">
+          <span class="text-slate-500">Total:</span>
+          <span class="font-semibold text-slate-800">{totalItems}</span>
         </div>
-        <p class="text-sm text-slate-600">
-          Comprehensive scan results with auto-verification status for XPU fixes
-        </p>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-4">
-        <div class="mb-4">
-          <input
-            type="text"
-            placeholder="Search by title, commit, author, or summary..."
-            bind:value={searchQuery}
-            on:input={handleFilterChange}
-            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
+      <div class="space-y-4 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Auto Verifier Status</label>
@@ -156,11 +145,13 @@
               {#each availableStatuses as status}
                 <button
                   on:click={() => { selectedStatus = status; handleFilterChange(); }}
-                  class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-all {
-                    selectedStatus === status
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'
-                  }"
+                  class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
+                  class:bg-slate-800={selectedStatus === status}
+                  class:text-white={selectedStatus === status}
+                  class:bg-white={selectedStatus !== status}
+                  class:text-slate-600={selectedStatus !== status}
+                  class:border-slate-300={selectedStatus !== status}
+                  class:border-slate-800={selectedStatus === status}
                 >
                   {status === 'All' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </button>
@@ -174,11 +165,13 @@
               {#each availableRisks as risk}
                 <button
                   on:click={() => { selectedRisk = risk; handleFilterChange(); }}
-                  class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-all {
-                    selectedRisk === risk
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'
-                  }"
+                  class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
+                  class:bg-slate-800={selectedRisk === risk}
+                  class:text-white={selectedRisk === risk}
+                  class:bg-white={selectedRisk !== risk}
+                  class:text-slate-600={selectedRisk !== risk}
+                  class:border-slate-300={selectedRisk !== risk}
+                  class:border-slate-800={selectedRisk === risk}
                 >
                   {risk === 'All' ? 'All' : risk.charAt(0).toUpperCase() + risk.slice(1)}
                 </button>
@@ -192,11 +185,13 @@
               {#each ['All', 'needs_fix', 'no_fix'] as option}
                 <button
                   on:click={() => { xpuNeedsFixFilter = option; handleFilterChange(); }}
-                  class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-all {
-                    xpuNeedsFixFilter === option
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'
-                  }"
+                  class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
+                  class:bg-slate-800={xpuNeedsFixFilter === option}
+                  class:text-white={xpuNeedsFixFilter === option}
+                  class:bg-white={xpuNeedsFixFilter !== option}
+                  class:text-slate-600={xpuNeedsFixFilter !== option}
+                  class:border-slate-300={xpuNeedsFixFilter !== option}
+                  class:border-slate-800={xpuNeedsFixFilter === option}
                 >
                   {option === 'All' ? 'All' : option === 'needs_fix' ? 'Needs Fix' : 'No Fix'}
                 </button>

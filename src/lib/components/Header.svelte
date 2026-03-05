@@ -24,13 +24,13 @@
   $: currentProjectName = PROJECTS.find(p => p.fullName === $currentProject)?.name || $currentProject;
 
   $: viewConfig = {
-    repo: { icon: GitBranch, title: 'Repo Overview', color: 'bg-blue-100 text-blue-700' },
-    model: { icon: Radar, title: 'Model Intelligence', color: 'bg-green-100 text-green-700' },
-    triton: { icon: Cpu, title: 'Triton Kernel Operations', color: 'bg-purple-100 text-purple-700' },
-    issues: { icon: AlertTriangle, title: 'Potential Issues', color: 'bg-orange-100 text-orange-700' },
-    fixes: { icon: Wrench, title: 'Repo Fix', color: 'bg-teal-100 text-teal-700' },
-    sync: { icon: RefreshCw, title: 'CUDA Fix Analysis', color: 'bg-cyan-100 text-cyan-700' },
-    scan: { icon: Shield, title: 'Scan Report', color: 'bg-indigo-100 text-indigo-700' }
+    repo: { icon: GitBranch, title: 'Repo Hot Topics', color: 'bg-blue-100 text-blue-700' },
+    model: { icon: Radar, title: 'New Model Tracking', color: 'bg-green-100 text-green-700' },
+    triton: { icon: Cpu, title: 'Cuda to Triton ', color: 'bg-purple-100 text-purple-700' },
+    issues: { icon: AlertTriangle, title: 'Code Defect Scan', color: 'bg-orange-100 text-orange-700' },
+    fixes: { icon: Wrench, title: 'Cuda Kernel Alignment', color: 'bg-teal-100 text-teal-700' },
+    sync: { icon: RefreshCw, title: 'Details', color: 'bg-cyan-100 text-cyan-700' },
+    scan: { icon: Shield, title: 'Cuda Fix Alignment', color: 'bg-indigo-100 text-indigo-700' }
   };
 
   $: currentConfig = viewConfig[$currentView];

@@ -5,7 +5,7 @@
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
   import Pagination from './Pagination.svelte';
-  import { AlertTriangle, CheckCircle, XCircle, Info, FileCode, Lightbulb } from 'lucide-svelte';
+  import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Info, FileCode, Lightbulb } from 'lucide-svelte';
 
   let selectedSeverity: string = 'All';
   let selectedCategory: string = 'All';
@@ -120,26 +120,21 @@
 {:else}
   <div class="space-y-6">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h2 class="text-2xl font-bold text-slate-800">Repo Fix</h2>
-          <p class="text-sm text-slate-600 mt-1">Repository scan results and suggested fixes</p>
-        </div>
-        <div class="flex items-center gap-2 text-sm">
+      <div class="flex items-center gap-4 mb-6">
+        <input
+          type="text"
+          bind:value={searchQuery}
+          on:input={handleFilterChange}
+          placeholder="Search by file, code, or operation name..."
+          class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
+        />
+        <div class="flex items-center gap-2 text-sm whitespace-nowrap">
           <span class="text-slate-500">Total:</span>
           <span class="font-semibold text-slate-800">{totalItems}</span>
         </div>
       </div>
 
       <div class="space-y-4 mb-6">
-        <input
-          type="text"
-          bind:value={searchQuery}
-          on:input={handleFilterChange}
-          placeholder="Search by file, code, or operation name..."
-          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-        />
-
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Severity</label>
@@ -300,17 +295,17 @@
           </div>
         {/each}
       </div>
-    </div>
 
-    {#if totalItems > 0}
-      <Pagination
-        {currentPage}
-        {totalItems}
-        {itemsPerPage}
-        on:pageChange={(e) => handlePageChange(e.detail)}
-        on:itemsPerPageChange={(e) => handleItemsPerPageChange(e.detail)}
-      />
-    {/if}
+      {#if totalItems > 0}
+        <Pagination
+          {currentPage}
+          {totalItems}
+          {itemsPerPage}
+          on:pageChange={(e) => handlePageChange(e.detail)}
+          on:itemsPerPageChange={(e) => handleItemsPerPageChange(e.detail)}
+        />
+      {/if}
+    </div>
   </div>
 {/if}
 

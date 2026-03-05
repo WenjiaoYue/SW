@@ -148,7 +148,7 @@ This model has been verified on Intel XPU architectures.
 |---|---|---|
 | **Self-Attention** | FlashAttention-v2 | ✅ Optimized |
 | **Feed Forward** | Native Inductor | ✅ Compatible |
-| **RMS Norm** | Triton Kernel | ✅ Optimized |
+| **RMS Norm** | Cuda to Triton | ✅ Optimized |
 
 ### ⚡ Performance
 - **Batch Size 32:** 145 tokens/sec`;

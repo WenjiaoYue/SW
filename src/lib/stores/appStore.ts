@@ -88,35 +88,35 @@ export const modelChatMessages = writable<ChatMessage[]>([
 export const tritonChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
-    content: "Hello! I can help you explore Triton kernel operations and their XPU compatibility."
+    content: "Hello! I can help you explore Cuda to Triton  and their compatibility."
   }
 ]);
 
 export const issuesChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
-    content: "Hello! I can help you analyze potential issues and validation gaps."
+    content: "Hello! I can help you analyze code defect scan results and validation gaps."
   }
 ]);
 
 export const fixesChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
-    content: "Hello! I can help you understand repository scan results and suggested fixes."
+    content: "Hello! I can help you understand cuda kernel alignment results and suggestions."
   }
 ]);
 
 export const syncChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
-    content: "Hello! I can help you analyze XPU synchronization and pointer issues."
+    content: "Hello! I can help you analyze Details and pointer issues."
   }
 ]);
 
 export const scanChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
-    content: "Hello! I can help you analyze comprehensive scan reports with auto-verification status."
+    content: "Hello! I can help you analyze comprehensive cuda fix alignments with auto-verification status."
   }
 ]);
 

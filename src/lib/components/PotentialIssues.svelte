@@ -5,7 +5,7 @@
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
   import Pagination from './Pagination.svelte';
-  import { AlertTriangle, CheckCircle, XCircle, Info, FileText, Calendar } from 'lucide-svelte';
+  import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Info, FileText, Calendar } from 'lucide-svelte';
 
   let selectedSeverity: string = 'All';
   let selectedCategory: string = 'All';
@@ -111,36 +111,30 @@
 {:else}
   <div class="space-y-6">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h2 class="text-2xl font-bold text-slate-800">Potential Issues</h2>
-          <p class="text-sm text-slate-600 mt-1">Validation gaps and compatibility issues</p>
+      <div class="flex items-center gap-4 mb-6">
+        <div class="flex items-center gap-2">
+          <Calendar class="w-4 h-4 text-slate-500" />
+          <input
+            type="date"
+            bind:value={selectedDate}
+            on:change={handleDateChange}
+            class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
         </div>
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <Calendar class="w-4 h-4 text-slate-500" />
-            <input
-              type="date"
-              bind:value={selectedDate}
-              on:change={handleDateChange}
-              class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div class="flex items-center gap-2 text-sm">
-            <span class="text-slate-500">Total:</span>
-            <span class="font-semibold text-slate-800">{totalItems}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="space-y-4 mb-6">
         <input
           type="text"
           bind:value={searchQuery}
           on:input={handleFilterChange}
           placeholder="Search by operation name or details..."
-          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
+        <div class="flex items-center gap-2 text-sm whitespace-nowrap">
+          <span class="text-slate-500">Total:</span>
+          <span class="font-semibold text-slate-800">{totalItems}</span>
+        </div>
+      </div>
+
+      <div class="space-y-4 mb-6">
 
         <div class="flex gap-4">
           <div class="flex-1">
