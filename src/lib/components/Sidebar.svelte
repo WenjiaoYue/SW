@@ -17,9 +17,9 @@
   </div>
 
   <nav class="flex-1 p-4 space-y-1">
-    <div class="px-3 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+    <!-- <div class="px-3 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
       Menu
-    </div>
+    </div> -->
 
     <button
       on:click={() => switchView('repo')}
@@ -27,7 +27,7 @@
       class:active={$currentView === 'repo'}
     >
       <GitBranch class="w-4 h-4 mr-3" />
-      <span class="text-sm">Repo Overview</span>
+      <span class="text-sm">Repo Hot Topics</span>
     </button>
 
     <button
@@ -36,7 +36,7 @@
       class:active={$currentView === 'model'}
     >
       <Radar class="w-4 h-4 mr-3" />
-      <span class="text-sm">Model Radar</span>
+      <span class="text-sm">New Model Tracking</span>
     </button>
 
     <button
@@ -45,7 +45,7 @@
       class:active={$currentView === 'triton'}
     >
       <Cpu class="w-4 h-4 mr-3" />
-      <span class="text-sm">Triton Kernel</span>
+      <span class="text-sm">Cuda to Triton</span>
     </button>
 
     <button
@@ -54,7 +54,7 @@
       class:active={$currentView === 'issues'}
     >
       <AlertTriangle class="w-4 h-4 mr-3" />
-      <span class="text-sm">Potential Issues</span>
+      <span class="text-sm">Code Defect Scan</span>
     </button>
 
     <button
@@ -63,32 +63,38 @@
       class:active={$currentView === 'fixes'}
     >
       <Wrench class="w-4 h-4 mr-3" />
-      <span class="text-sm">Repo Fix</span>
+      <span class="text-sm">Cuda Kernel Alignment</span>
     </button>
 
-    <button
-      on:click={() => switchView('sync')}
-      class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
-      class:active={$currentView === 'sync'}
-    >
-      <RefreshCw class="w-4 h-4 mr-3" />
-      <span class="text-sm">XPU Sync</span>
-    </button>
-
-    <button
-      on:click={() => switchView('scan')}
-      class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
-      class:active={$currentView === 'scan'}
-    >
-      <Shield class="w-4 h-4 mr-3" />
-      <span class="text-sm">Scan Report</span>
-    </button>
+    <!-- Cuda Fix Alignment with Details submenu -->
+    <div>
+      <button
+        on:click={() => switchView('scan')}
+        class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+        class:active={$currentView === 'scan'}
+      >
+        <Shield class="w-4 h-4 mr-3" />
+        <span class="text-sm">Cuda Fix Alignment</span>
+      </button>
+      <ul class="pl-8">
+        <li>
+          <button
+            on:click={() => switchView('sync')}
+            class="nav-btn w-full flex items-center px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+            class:active={$currentView === 'sync'}
+          >
+            <RefreshCw class="w-4 h-4 mr-3" />
+            <span class="text-sm">Details</span>
+          </button>
+        </li>
+      </ul>
+    </div>
   </nav>
 
-  <div class="p-4 border-t border-slate-200">
+  <!-- <div class="p-4 border-t border-slate-200">
     <button class="w-full flex items-center px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
       <BookOpen class="w-4 h-4 mr-3" />
       <span class="text-sm">Documentation</span>
     </button>
-  </div>
+  </div> -->
 </aside>

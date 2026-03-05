@@ -61,11 +61,11 @@
     if (!status) {
       return {
         icon: AlertCircle,
-        color: "text-slate-600",
-        bgColor: "bg-slate-50",
-        borderColor: "border-slate-200",
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
         label: "Unknown",
-        badgeColor: "bg-slate-500",
+        badgeColor: "bg-blue-500",
       };
     }
 
@@ -78,11 +78,11 @@
     ) {
       return {
         icon: CheckCircle2,
-        color: "text-slate-700",
-        bgColor: "bg-slate-50",
-        borderColor: "border-slate-200",
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
         label: "Supported",
-        badgeColor: "bg-slate-700",
+        badgeColor: "bg-blue-500",
       };
     }
 
@@ -93,22 +93,22 @@
     ) {
       return {
         icon: AlertCircle,
-        color: "text-slate-600",
-        bgColor: "bg-slate-50",
-        borderColor: "border-slate-200",
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
         label: "Partial Support",
-        badgeColor: "bg-slate-600",
+        badgeColor: "bg-blue-500",
       };
     }
 
     if (statusLower.includes("unclear") || statusLower.includes("unknown")) {
       return {
         icon: AlertCircle,
-        color: "text-slate-600",
-        bgColor: "bg-slate-50",
-        borderColor: "border-slate-200",
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
         label: "Unclear",
-        badgeColor: "bg-slate-600",
+        badgeColor: "bg-blue-500",
       };
     }
 
@@ -119,21 +119,21 @@
     ) {
       return {
         icon: XCircle,
-        color: "text-slate-500",
-        bgColor: "bg-slate-50",
-        borderColor: "border-slate-200",
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
         label: "Not Supported",
-        badgeColor: "bg-slate-500",
+        badgeColor: "bg-blue-500",
       };
     }
 
     return {
       icon: CheckCircle2,
-      color: "text-slate-600",
-      bgColor: "bg-slate-50",
-      borderColor: "border-slate-200",
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
       label: status,
-      badgeColor: "bg-slate-600",
+      badgeColor: "bg-blue-500",
     };
   }
 </script>
@@ -163,7 +163,7 @@
             {/if}
           </div>
 
-          <div class="flex items-center gap-3 text-xs text-slate-700 flex-wrap">
+          <div class="flex items-center gap-3 text-xs text-slate-600 flex-wrap">
             <span class="flex items-center gap-1">
               <User class="w-3 h-3" />
               <span class="truncate max-w-[120px]">{selectedModel.author}</span>
@@ -180,15 +180,17 @@
               <Download class="w-3 h-3" />
               {selectedModel.downloads}
             </span>
-            <span class="flex items-center gap-1">
+            <span
+              class="flex items-center gap-1 font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"
+            >
               <TrendingUp class="w-3 h-3" />
-              {formatTrendingScore(selectedModel.trendingScore)}
+              Trending: {formatTrendingScore(selectedModel.trendingScore)}
             </span>
           </div>
         </div>
 
         <div
-          class="flex items-center px-3 py-1.5 rounded-full border text-xs font-bold bg-slate-100 text-slate-800 border-slate-300 flex-shrink-0"
+          class="flex items-center px-3 py-1.5 rounded-full border text-xs font-bold bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0"
         >
           <span class="truncate max-w-[150px]">{selectedModel.task}</span>
         </div>
@@ -235,25 +237,29 @@
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-3">
-              <div class="bg-white rounded-lg p-3 border border-slate-200">
+              <div
+                class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200"
+              >
                 <div
-                  class="text-[10px] uppercase font-bold text-slate-500 mb-1.5 flex items-center gap-1"
+                  class="text-[10px] uppercase font-bold text-green-700 mb-1.5 flex items-center gap-1"
                 >
                   <Database class="w-3 h-3" />
                   Model Params
                 </div>
-                <div class="text-lg font-bold text-slate-800">
+                <div class="text-lg font-bold text-green-900">
                   {selectedModel.rawData.model_size || "N/A"}
                 </div>
               </div>
-              <div class="bg-white rounded-lg p-3 border border-slate-200">
+              <div
+                class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200"
+              >
                 <div
-                  class="text-[10px] uppercase font-bold text-slate-500 mb-1.5 flex items-center gap-1"
+                  class="text-[10px] uppercase font-bold text-blue-700 mb-1.5 flex items-center gap-1"
                 >
                   <Weight class="w-3 h-3" />
                   Weight Type
                 </div>
-                <div class="text-lg font-bold text-slate-800">
+                <div class="text-lg font-bold text-blue-900">
                   {selectedModel.rawData.dtypes || "bfloat16"}
                 </div>
               </div>
@@ -263,53 +269,58 @@
           {#if selectedModel.rawData.xpu}
             {@const xpuStatus = getStatusInfo(selectedModel.rawData.xpu.status)}
             <div
-              class="relative overflow-hidden rounded-lg border {xpuStatus.borderColor} bg-white"
+              class="relative overflow-hidden rounded-xl border-2 {xpuStatus.borderColor} {xpuStatus.bgColor} shadow-sm"
             >
-              <button
-                on:click={() => toggleSection("xpu")}
-                class="w-full p-4 flex items-start justify-between hover:bg-slate-50 transition-colors"
-              >
-                <div class="flex items-center gap-3">
-                  <div class="p-2 bg-slate-50 rounded-lg">
-                    <Cpu class="w-4 h-4 text-slate-600" />
-                  </div>
-                  <div class="text-left">
-                    <h3 class="text-sm font-bold text-slate-800">
-                      Intel XPU Support (vLLM)
-                    </h3>
-                    <div class="flex items-center gap-2 mt-0.5">
-                      <svelte:component
-                        this={xpuStatus.icon}
-                        class="w-3.5 h-3.5 {xpuStatus.color}"
-                      />
-                      <p class="text-xs {xpuStatus.color} font-semibold">
-                        {xpuStatus.label}
-                      </p>
+              <div class="absolute top-0 right-0 opacity-5">
+                <Cpu class="w-32 h-32 {xpuStatus.color}" />
+              </div>
+              <div class="relative z-10">
+                <button
+                  on:click={() => toggleSection("xpu")}
+                  class="w-full p-4 flex items-start justify-between hover:bg-white/30 transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <div class="p-2 bg-white rounded-lg shadow-sm">
+                      <Cpu class="w-5 h-5 {xpuStatus.color}" />
+                    </div>
+                    <div class="text-left">
+                      <h3 class="text-sm font-bold text-slate-800">
+                        Intel XPU Support (vLLM)
+                      </h3>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <svelte:component
+                          this={xpuStatus.icon}
+                          class="w-3.5 h-3.5 {xpuStatus.color}"
+                        />
+                        <p class="text-xs {xpuStatus.color} font-semibold">
+                          {xpuStatus.label}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="flex-shrink-0 ml-2">
-                  {#if expandedSections.xpu}
-                    <ChevronUp class="w-5 h-5 text-slate-400" />
-                  {:else}
-                    <ChevronDown class="w-5 h-5 text-slate-400" />
-                  {/if}
-                </div>
-              </button>
+                  <div class="flex-shrink-0 ml-2">
+                    {#if expandedSections.xpu}
+                      <ChevronUp class="w-5 h-5 text-slate-400" />
+                    {:else}
+                      <ChevronDown class="w-5 h-5 text-slate-400" />
+                    {/if}
+                  </div>
+                </button>
 
-              {#if expandedSections.xpu && selectedModel.rawData.xpu.details}
-                <div class="px-4 pb-4 border-t border-slate-100">
-                  <div
-                    class="mt-4 p-3 bg-slate-50 rounded-lg max-h-48 overflow-y-auto"
-                  >
+                {#if expandedSections.xpu && selectedModel.rawData.xpu.details}
+                  <div class="px-4 pb-4">
                     <div
-                      class="text-xs text-slate-700 whitespace-pre-wrap break-words"
+                      class="p-3 bg-white/70 rounded-lg border border-white/50 max-h-48 overflow-y-auto"
                     >
-                      {selectedModel.rawData.xpu.details}
+                      <div
+                        class="text-xs text-slate-700 whitespace-pre-wrap break-words"
+                      >
+                        {selectedModel.rawData.xpu.details}
+                      </div>
                     </div>
                   </div>
-                </div>
-              {/if}
+                {/if}
+              </div>
             </div>
           {/if}
 
@@ -318,10 +329,12 @@
               {@const tfStatus = getStatusInfo(
                 selectedModel.rawData["huggingface/transformers"].status,
               )}
-              <div class="rounded-lg border border-slate-200 bg-white">
+              <div
+                class="rounded-lg border {tfStatus.borderColor} {tfStatus.bgColor}"
+              >
                 <button
                   on:click={() => toggleSection("transformers")}
-                  class="w-full p-3 flex items-start justify-between hover:bg-slate-50 transition-colors"
+                  class="w-full p-3 flex items-start justify-between hover:bg-white/30 transition-colors"
                 >
                   <div class="flex items-center gap-2">
                     <svelte:component
@@ -346,9 +359,9 @@
                   </div>
                 </button>
                 {#if expandedSections.transformers && selectedModel.rawData["huggingface/transformers"].details}
-                  <div class="px-3 pb-3 border-t border-slate-100">
+                  <div class="px-3 pb-3">
                     <div
-                      class="mt-3 p-2 bg-slate-50 rounded max-h-40 overflow-y-auto"
+                      class="p-2 bg-white/70 rounded border border-white/50 max-h-40 overflow-y-auto"
                     >
                       <div
                         class="text-[10px] text-slate-700 whitespace-pre-wrap break-words"
@@ -366,10 +379,12 @@
               {@const vllmStatus = getStatusInfo(
                 selectedModel.rawData["vllm-project/vllm"].status,
               )}
-              <div class="rounded-lg border border-slate-200 bg-white">
+              <div
+                class="rounded-lg border {vllmStatus.borderColor} {vllmStatus.bgColor}"
+              >
                 <button
                   on:click={() => toggleSection("vllm")}
-                  class="w-full p-3 flex items-start justify-between hover:bg-slate-50 transition-colors"
+                  class="w-full p-3 flex items-start justify-between hover:bg-white/30 transition-colors"
                 >
                   <div class="flex items-center gap-2">
                     <svelte:component
@@ -392,9 +407,9 @@
                   </div>
                 </button>
                 {#if expandedSections.vllm && selectedModel.rawData["vllm-project/vllm"].details}
-                  <div class="px-3 pb-3 border-t border-slate-100">
+                  <div class="px-3 pb-3">
                     <div
-                      class="mt-3 p-2 bg-slate-50 rounded max-h-40 overflow-y-auto"
+                      class="p-2 bg-white/70 rounded border border-white/50 max-h-40 overflow-y-auto"
                     >
                       <div
                         class="text-[10px] text-slate-700 whitespace-pre-wrap break-words"

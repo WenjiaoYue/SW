@@ -13,6 +13,7 @@
   let searchQuery: string = '';
   let currentPage = 1;
   let itemsPerPage = 10;
+  let expandedScripts: Record<string, boolean> = {};
 
   const statusColors: Record<string, string> = {
     immune: 'text-green-700 bg-green-50 border-green-200',
@@ -365,6 +366,28 @@
                     <div class="mt-2 pt-2 border-t border-slate-200">
                       <span class="text-slate-600 text-xs">Verdict Reason:</span>
                       <p class="text-xs text-slate-700 mt-1 leading-relaxed">{report.auto_verifier.verdict_reason}</p>
+                    </div>
+                  {/if}
+                  {#if report.auto_verifier.repro_script}
+                    <div class="mt-2 pt-2 border-t border-slate-200">
+                      <button
+                        class="text-slate-600 text-xs font-semibold flex items-center gap-1 hover:text-slate-800 transition-colors"
+                        on:click={() => expandedScripts[report.id] = !expandedScripts[report.id]}
+                      >
+                        <svg class="w-3.5 h-3.5 transition-transform {expandedScripts[report.id] ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        XPU Repro Script
+                      </button>
+                      {#if expandedScripts[report.id]}
+                        <pre class="text-xs mt-1 p-2 bg-slate-800 text-slate-200 rounded overflow-x-auto leading-relaxed font-mono">{report.auto_verifier.repro_script}</pre>
+                      {/if}
+                    </div>
+                  {/if}
+                  {#if report.auto_verifier.xpu_error_output}
+                    <div class="mt-2 pt-2 border-t border-slate-200">
+                      <span class="text-slate-600 text-xs font-semibold">XPU Error Output:</span>
+                      <pre class="text-xs text-red-700 mt-1 p-2 bg-red-50 rounded overflow-x-auto leading-relaxed font-mono border border-red-200">{report.auto_verifier.xpu_error_output}</pre>
                     </div>
                   {/if}
                   {#if report.auto_verifier.script_quality_warning}
