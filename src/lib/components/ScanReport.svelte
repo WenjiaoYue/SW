@@ -138,7 +138,7 @@
       </div>
 
       <div class="space-y-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center">
           <div>
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Auto Verifier Status</label>
             <div class="flex flex-wrap gap-2">
@@ -179,7 +179,7 @@
             </div>
           </div>
 
-          <div>
+          <!-- <div>
             <label class="text-xs font-semibold text-slate-700 mb-1.5 block">XPU Needs Fix</label>
             <div class="flex flex-wrap gap-2">
               {#each ['All', 'needs_fix', 'no_fix'] as option}
@@ -197,7 +197,7 @@
                 </button>
               {/each}
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
 

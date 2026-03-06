@@ -58,7 +58,7 @@ export async function fetchHFModels(req: HFModelsRequest = {}): Promise<HFModels
 }
 
 export const fetchTritonInsights = (req: any) => 
-  request<any>(`${API_BASE}/triton_insights`, { method: 'POST', body: JSON.stringify(req) });
+  request<any>(`${API_BASE}/triton_kernels`, { method: 'POST', body: JSON.stringify(req) });
 
 export async function fetchPotentialIssues(req: PotentialIssuesRequest) {
   try {

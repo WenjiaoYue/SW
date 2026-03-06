@@ -60,11 +60,11 @@
           </div>
 
           <div
-            class="absolute inset-0 p-5 overflow-y-auto transition-opacity duration-300"
+            class="absolute inset-0 px-6 py-5 overflow-y-auto transition-opacity duration-300"
             class:opacity-0={activeTab !== 'report'}
             class:pointer-events-none={activeTab !== 'report'}
           >
-            <div class="markdown-content text-[13px]">
+            <div class="markdown-content text-[13px] leading-6 text-slate-700">
               {@html renderedMarkdown}
             </div>
           </div>
@@ -77,3 +77,76 @@
     <PRTable prs={pullRequests} />
   </div>
 {/if}
+
+<style>
+  .markdown-content :global(h1),
+  .markdown-content :global(h2),
+  .markdown-content :global(h3),
+  .markdown-content :global(h4) {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.35;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .markdown-content :global(h1) {
+    font-size: 1.1rem;
+  }
+
+  .markdown-content :global(h2) {
+    font-size: 1rem;
+  }
+
+  .markdown-content :global(h3),
+  .markdown-content :global(h4) {
+    font-size: 0.95rem;
+  }
+
+  .markdown-content :global(p) {
+    margin: 0.7rem 0;
+    line-height: 1.7;
+  }
+
+  .markdown-content :global(ul),
+  .markdown-content :global(ol) {
+    margin: 0.7rem 0 0.9rem;
+    padding-left: 1.2rem;
+  }
+
+  .markdown-content :global(li) {
+    margin: 0.3rem 0;
+    line-height: 1.65;
+  }
+
+  .markdown-content :global(blockquote) {
+    margin: 0.9rem 0;
+    padding: 0.55rem 0.85rem;
+    border-left: 3px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 0.35rem;
+  }
+
+  .markdown-content :global(pre) {
+    margin: 0.85rem 0;
+    padding: 0.75rem 0.85rem;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    overflow-x: auto;
+  }
+
+  .markdown-content :global(code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.82em;
+  }
+
+  .markdown-content :global(p code),
+  .markdown-content :global(li code) {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.25rem;
+    padding: 0.05rem 0.28rem;
+  }
+</style>
