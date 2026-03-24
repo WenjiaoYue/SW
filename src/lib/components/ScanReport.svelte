@@ -75,14 +75,10 @@
   }
 
   onMount(() => {
-    if ($currentView === 'scan') {
-      loadData();
-    }
+    // Data is pre-loaded by dataLoader.ts; nothing to do here.
   });
 
-  $: if ($currentView === 'scan' && $scanReports.length === 0 && !$scanReportsLoading) {
-    loadData();
-  }
+  // Removed reactive re-load on tab switch — data is loaded once at startup.
 
   function handlePageChange(page: number) {
     currentPage = page;

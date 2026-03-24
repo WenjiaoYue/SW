@@ -27,9 +27,7 @@
   let sortDirection: SortDirection = 'desc';
 
   onMount(async () => {
-    if ($tritonOps.length === 0) {
-      await loadTritonOps();
-    }
+    // Data is pre-loaded by dataLoader.ts; nothing to do here.
   });
 
   async function loadTritonOps() {

@@ -13,6 +13,7 @@
   } from '$lib/stores/appStore';
   import { repoData, isLoadingData, dataError, cachedRepoData } from '$lib/stores/dataStore';
   import { fetchGitHubTopics } from '$lib/services/api';
+  import { reloadRepoData } from '$lib/services/dataLoader';
   import { marked } from 'marked';
   import { get } from 'svelte/store';
 
@@ -24,18 +25,7 @@
   $: if ($currentProject && $currentProject !== previousProject) {
     previousProject = $currentProject;
     if ($currentView === 'repo') {
-      loadCachedOrFetchData($currentProject, 7);
-    }
-  }
-
-  async function loadCachedOrFetchData(repo: string, days: number = 7) {
-    const cacheKey = `${repo}_${days}`;
-    const cache = get(cachedRepoData);
-
-    if (cache.has(cacheKey)) {
-      repoData.set(cache.get(cacheKey)!);
-    } else {
-      await fetchRepoData(repo, days, false);
+      reloadRepoData($currentProject);
     }
   }
 

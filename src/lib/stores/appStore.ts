@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { HFModel, PotentialIssue, RepoFixIssue, XPUSyncIssue } from '$lib/services/api';
 
-export type ViewType = 'repo' | 'model' | 'triton' | 'issues' | 'fixes' | 'sync' | 'scan';
+export type ViewType = 'repo' | 'model' | 'triton' | 'issues' | 'fixes' | 'sync' | 'scan' | 'license' | 'sycl';
 
 export interface ChatMessage {
   type: 'bot' | 'user';
@@ -71,6 +71,16 @@ export const scanReports = writable<any[]>([]);
 export const scanReportsLoading = writable(false);
 export const scanReportsError = writable<string | null>(null);
 
+export const licenseReports = writable<any[]>([]);
+export const licenseReportsLoading = writable(false);
+export const licenseReportsError = writable<string | null>(null);
+export const licenseReportsLoaded = writable(false);
+
+export const syclReports = writable<any[]>([]);
+export const syclReportsLoading = writable(false);
+export const syclReportsError = writable<string | null>(null);
+export const syclReportsLoaded = writable(false);
+
 export const repoChatMessages = writable<ChatMessage[]>([
   {
     type: 'bot',
@@ -120,6 +130,20 @@ export const scanChatMessages = writable<ChatMessage[]>([
   }
 ]);
 
+export const licenseChatMessages = writable<ChatMessage[]>([
+  {
+    type: 'bot',
+    content: "Hello! I can help you analyze license compliance findings and detect incompatible licenses."
+  }
+]);
+
+export const syclChatMessages = writable<ChatMessage[]>([
+  {
+    type: 'bot',
+    content: "Hello! I can help you explore deprecated SYCL API usages and migration guidance."
+  }
+]);
+
 export const currentChatMessages = derived(
   currentView,
   ($currentView) => {
@@ -130,6 +154,8 @@ export const currentChatMessages = derived(
     if ($currentView === 'fixes') return fixesChatMessages;
     if ($currentView === 'sync') return syncChatMessages;
     if ($currentView === 'scan') return scanChatMessages;
+    if ($currentView === 'license') return licenseChatMessages;
+    if ($currentView === 'sycl') return syclChatMessages;
     return repoChatMessages;
   }
 );

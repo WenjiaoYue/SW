@@ -19,7 +19,7 @@
   let searchQuery = '';
 
   onMount(async () => {
-    await loadTritonInsights();
+    // Data is pre-loaded by dataLoader.ts; nothing to do here.
   });
 
   async function loadTritonInsights() {
@@ -190,9 +190,6 @@
 
                 <div class="flex-1 text-left">
                   <h3 class="font-semibold text-slate-800 text-sm">{displayName}</h3>
-                  <p class="text-xs text-slate-500 mt-0.5">
-                    {isExpanded ? 'Click to collapse' : 'Click to expand'}
-                  </p>
                 </div>
 
                 <div class="text-slate-400">
@@ -277,7 +274,7 @@
                         </div>
                       {/if}
                       {#if currentTab === 'results'}
-                        <div class="prose prose-xs max-w-none prose-slate prose-p:text-[10px] prose-li:text-[10px] prose-headings:text-[11px] prose-code:text-[9px] prose-pre:text-[9px] prose-p:leading-5 prose-li:leading-5 bg-emerald-50/30 p-3 rounded-lg border border-emerald-100">
+                        <div class="prose prose-xs max-w-none prose-slate prose-p:text-[9px] prose-li:text-[9px] prose-strong:text-[9px] prose-headings:text-[10px] prose-code:text-[8px] prose-pre:text-[8px] prose-p:leading-4 prose-li:leading-4 bg-emerald-50/30 p-3 rounded-lg border border-emerald-100">
                           {@html renderMarkdown(insight.results)}
                         </div>
                       {/if}

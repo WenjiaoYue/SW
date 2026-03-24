@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Sidebar from './lib/components/Sidebar.svelte';
   import Header from './lib/components/Header.svelte';
   import RepoOverview from './lib/components/RepoOverview.svelte';
@@ -10,6 +11,13 @@
   import ScanReport from './lib/components/ScanReport.svelte';
   import ChatWidget from './lib/components/ChatWidget.svelte';
   import { currentView } from './lib/stores/appStore';
+  import { initializeAllData } from './lib/services/dataLoader';
+  import LicenseReport from './lib/components/LicenseReport.svelte';
+  import SyclReport from './lib/components/SyclReport.svelte';
+
+  onMount(() => {
+    initializeAllData();
+  });
 </script>
 
 <div class="flex h-screen w-full">
@@ -46,6 +54,14 @@
       {:else if $currentView === 'scan'}
         <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'scan'}>
           <ScanReport />
+        </div>
+      {:else if $currentView === 'license'}
+        <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'license'}>
+          <LicenseReport />
+        </div>
+      {:else if $currentView === 'sycl'}
+        <div class="transition-opacity duration-300" class:opacity-0={$currentView !== 'sycl'}>
+          <SyclReport />
         </div>
       {/if}
     </main>

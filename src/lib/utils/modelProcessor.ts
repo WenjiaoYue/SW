@@ -54,12 +54,14 @@ function extractModelName(modelId: string): string {
 }
 
 function generateScoreFromModel(model: HFModel): number[] {
-  const transformersScore = model['huggingface/transformers']
-    ? getScoreFromStatus(model['huggingface/transformers'].status)
+  const tf = model['huggingface/transformers'];
+  const transformersScore = tf
+    ? getScoreFromStatus(tf.cuda_support?.status || tf.xpu_support?.status)
     : 0;
 
-  const vllmScore = model['vllm-project/vllm']
-    ? getScoreFromStatus(model['vllm-project/vllm'].status)
+  const vl = model['vllm-project/vllm'];
+  const vllmScore = vl
+    ? getScoreFromStatus(vl.cuda_support?.status || vl.xpu_support?.status)
     : 0;
 
   const xpuScore = model.xpu

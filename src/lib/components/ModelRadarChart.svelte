@@ -71,6 +71,28 @@
 
     const statusLower = status.toLowerCase();
 
+    if (statusLower === "success") {
+      return {
+        icon: CheckCircle2,
+        color: "text-green-600",
+        bgColor: "bg-green-50",
+        borderColor: "border-green-200",
+        label: "Success",
+        badgeColor: "bg-green-500",
+      };
+    }
+
+    if (statusLower === "failure") {
+      return {
+        icon: XCircle,
+        color: "text-red-600",
+        bgColor: "bg-red-50",
+        borderColor: "border-red-200",
+        label: "Failure",
+        badgeColor: "bg-red-500",
+      };
+    }
+
     if (
       statusLower.includes("support") &&
       !statusLower.includes("not") &&
@@ -93,22 +115,22 @@
     ) {
       return {
         icon: AlertCircle,
-        color: "text-blue-600",
-        bgColor: "bg-blue-50",
-        borderColor: "border-blue-200",
+        color: "text-amber-600",
+        bgColor: "bg-amber-50",
+        borderColor: "border-amber-200",
         label: "Partial Support",
-        badgeColor: "bg-blue-500",
+        badgeColor: "bg-amber-500",
       };
     }
 
     if (statusLower.includes("unclear") || statusLower.includes("unknown")) {
       return {
         icon: AlertCircle,
-        color: "text-blue-600",
-        bgColor: "bg-blue-50",
-        borderColor: "border-blue-200",
+        color: "text-slate-600",
+        bgColor: "bg-slate-50",
+        borderColor: "border-slate-200",
         label: "Unclear",
-        badgeColor: "bg-blue-500",
+        badgeColor: "bg-slate-500",
       };
     }
 
@@ -119,11 +141,11 @@
     ) {
       return {
         icon: XCircle,
-        color: "text-blue-600",
-        bgColor: "bg-blue-50",
-        borderColor: "border-blue-200",
+        color: "text-red-600",
+        bgColor: "bg-red-50",
+        borderColor: "border-red-200",
         label: "Not Supported",
-        badgeColor: "bg-blue-500",
+        badgeColor: "bg-red-500",
       };
     }
 
@@ -326,9 +348,10 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
             {#if selectedModel.rawData["huggingface/transformers"]}
-              {@const tfStatus = getStatusInfo(
-                selectedModel.rawData["huggingface/transformers"].status,
-              )}
+              {@const tfCuda = selectedModel.rawData["huggingface/transformers"].cuda_support}
+              {@const tfXpu = selectedModel.rawData["huggingface/transformers"].xpu_support}
+              {@const tfStatusStr = tfCuda?.status || tfXpu?.status || ""}
+              {@const tfStatus = getStatusInfo(tfStatusStr)}
               <div
                 class="rounded-lg border {tfStatus.borderColor} {tfStatus.bgColor}"
               >
@@ -358,27 +381,38 @@
                     {/if}
                   </div>
                 </button>
-                {#if expandedSections.transformers && selectedModel.rawData["huggingface/transformers"].details}
-                  <div class="px-3 pb-3">
-                    <div
-                      class="p-2 bg-white/70 rounded border border-white/50 max-h-40 overflow-y-auto"
-                    >
-                      <div
-                        class="text-[10px] text-slate-700 whitespace-pre-wrap break-words"
-                      >
-                        {selectedModel.rawData["huggingface/transformers"]
-                          .details}
+                {#if expandedSections.transformers}
+                  <div class="px-3 pb-3 space-y-2">
+                    {#if tfCuda?.summary}
+                      <div>
+                        <div class="text-[10px] uppercase font-bold text-slate-500 mb-1">CUDA Support</div>
+                        <div class="p-2 bg-white/70 rounded border border-white/50 max-h-40 overflow-y-auto">
+                          <div class="text-[10px] text-slate-700 whitespace-pre-wrap break-words">
+                            {tfCuda.summary}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    {/if}
+                    {#if tfXpu?.summary}
+                      <div>
+                        <div class="text-[10px] uppercase font-bold text-slate-500 mb-1">XPU Support</div>
+                        <div class="p-2 bg-white/70 rounded border border-white/50 max-h-40 overflow-y-auto">
+                          <div class="text-[10px] text-slate-700 whitespace-pre-wrap break-words">
+                            {tfXpu.summary}
+                          </div>
+                        </div>
+                      </div>
+                    {/if}
                   </div>
                 {/if}
               </div>
             {/if}
 
             {#if selectedModel.rawData["vllm-project/vllm"]}
-              {@const vllmStatus = getStatusInfo(
-                selectedModel.rawData["vllm-project/vllm"].status,
-              )}
+              {@const vllmCuda = selectedModel.rawData["vllm-project/vllm"].cuda_support}
+              {@const vllmXpu = selectedModel.rawData["vllm-project/vllm"].xpu_support}
+              {@const vllmStatusStr = vllmCuda?.status || vllmXpu?.status || ""}
+              {@const vllmStatus = getStatusInfo(vllmStatusStr)}
               <div
                 class="rounded-lg border {vllmStatus.borderColor} {vllmStatus.bgColor}"
               >
@@ -406,17 +440,28 @@
                     {/if}
                   </div>
                 </button>
-                {#if expandedSections.vllm && selectedModel.rawData["vllm-project/vllm"].details}
-                  <div class="px-3 pb-3">
-                    <div
-                      class="p-2 bg-white/70 rounded border border-white/50 max-h-40 overflow-y-auto"
-                    >
-                      <div
-                        class="text-[10px] text-slate-700 whitespace-pre-wrap break-words"
-                      >
-                        {selectedModel.rawData["vllm-project/vllm"].details}
+                {#if expandedSections.vllm}
+                  <div class="px-3 pb-3 space-y-2">
+                    {#if vllmCuda?.summary}
+                      <div>
+                        <div class="text-[10px] uppercase font-bold text-slate-500 mb-1">CUDA Support</div>
+                        <div class="p-2 bg-white/70 rounded border border-white/50 max-h-40 overflow-y-auto">
+                          <div class="text-[10px] text-slate-700 whitespace-pre-wrap break-words">
+                            {vllmCuda.summary}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    {/if}
+                    {#if vllmXpu?.summary}
+                      <div>
+                        <div class="text-[10px] uppercase font-bold text-slate-500 mb-1">XPU Support</div>
+                        <div class="p-2 bg-white/70 rounded border border-white/50 max-h-40 overflow-y-auto">
+                          <div class="text-[10px] text-slate-700 whitespace-pre-wrap break-words">
+                            {vllmXpu.summary}
+                          </div>
+                        </div>
+                      </div>
+                    {/if}
                   </div>
                 {/if}
               </div>

@@ -1,6 +1,7 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const SCAN_BASE = import.meta.env.VITE_SCAN_API_BASE_URL; 
+const LICENSE_SYCL_BASE = 'http://10.219.77.7:8000';
 
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -45,6 +46,33 @@ export interface PotentialIssuesRequest { date?: string; page?: number; page_siz
 export interface RepoFixesRequest { severity?: string; category?: string; page?: number; page_size?: number; }
 export interface XPUSyncRequest { applicable?: boolean; category?: string; page?: number; page_size?: number; }
 export interface ScanReportRequest { status?: string; xpu_needs_fix?: boolean; risk?: string; page?: number; page_size?: number; }
+export interface LicenseReportRequest { scan_date?: string; scan_month?: string; severity?: string; category?: string; spdx_id?: string; page?: number; page_size?: number; }
+export interface SyclReportRequest { scan_date?: string; scan_month?: string; severity?: string; category?: string; symbol?: string; file?: string; page?: number; page_size?: number; }
+
+export interface LicenseRecord {
+  file: string;
+  line: number;
+  severity: string;
+  category: string;
+  spdx_id: string | null;
+  reason: string;
+  suggestion: string;
+  scan_id: string | null;
+}
+
+export interface SyclRecord {
+  file: string;
+  line: number;
+  code: string | null;
+  severity: string;
+  category: string;
+  reason: string;
+  suggestion: string;
+  symbol: string | null;
+  llm_analysis: string | null;
+  kernel: string | null;
+  scan_id: string | null;
+}
 
 export const fetchGitHubTopics = (req: TopicRequest) => 
   request<APIResponse>(`${API_BASE}/github-hot-topics`, { method: 'POST', body: JSON.stringify(req) });
@@ -98,6 +126,28 @@ export async function fetchScanReport(req: ScanReportRequest) {
 
 export const fetchTritonOps = (): Promise<{ ops: TritonOp[] }> => 
   new Promise(res => setTimeout(() => res({ ops: MOCK_TRITON_OPS }), 500));
+
+export async function fetchLicenseReport(req: LicenseReportRequest = {}) {
+  try {
+    return await request<any>(withQuery(`${LICENSE_SYCL_BASE}/get_license_report`, req), { method: 'GET' });
+  } catch (e) {
+    console.warn('LicenseReport API failed, using Mock Data');
+    return { data: [], total: 0, page: 1, page_size: 1000 };
+  }
+}
+
+export async function fetchSyclReport(req: SyclReportRequest = {}) {
+  try {
+    return await request<any>(withQuery(`${LICENSE_SYCL_BASE}/get_sycl_report`, req), { method: 'GET' });
+  } catch (e) {
+    console.warn('SyclReport API failed, using Mock Data');
+    return { data: [], total: 0, page: 1, page_size: 1000 };
+  }
+}
+
+export function getLicenseDownloadUrl(scanId: string): string {
+  return `${LICENSE_SYCL_BASE}/download/license/${scanId}`;
+}
 
 const MOCK_TRITON_OPS: TritonOp[] = [
   {

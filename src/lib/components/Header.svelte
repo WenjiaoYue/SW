@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronDown, Radar, Cpu, GitBranch, AlertTriangle, Wrench, RefreshCw, Shield } from 'lucide-svelte';
+  import { ChevronDown, Radar, Cpu, GitBranch, AlertTriangle, Wrench, RefreshCw, Shield, FileText, Ban } from 'lucide-svelte';
   import { currentView, currentProject } from '$lib/stores/appStore';
   import { PROJECTS } from '$lib/data/constants';
 
@@ -30,7 +30,9 @@
     issues: { icon: AlertTriangle, title: 'Code Defect Scan', color: 'bg-orange-100 text-orange-700' },
     fixes: { icon: Wrench, title: 'Cuda Kernel Alignment', color: 'bg-teal-100 text-teal-700' },
     sync: { icon: RefreshCw, title: 'Details', color: 'bg-cyan-100 text-cyan-700' },
-    scan: { icon: Shield, title: 'Cuda Fix Alignment', color: 'bg-indigo-100 text-indigo-700' }
+    scan: { icon: Shield, title: 'Cuda Fix Alignment', color: 'bg-indigo-100 text-indigo-700' },
+    license: { icon: FileText, title: 'License Compliance', color: 'bg-pink-100 text-pink-700' },
+    sycl: { icon: Ban, title: 'SYCL Deprecation', color: 'bg-gray-100 text-gray-700' }
   };
 
   $: currentConfig = viewConfig[$currentView];

@@ -66,7 +66,7 @@
   }
 
   onMount(() => {
-    loadData();
+    // Data is pre-loaded by dataLoader.ts; nothing to do here.
   });
 
   async function handleDateChange() {

@@ -175,7 +175,7 @@
   }
 
   onMount(() => {
-    loadModels();
+    // Data is pre-loaded by dataLoader.ts; nothing to do here.
   });
 
   $: maxLikes = Math.max(...$hfModels.map((m) => m.rawData?.likes || 0), 1000);
