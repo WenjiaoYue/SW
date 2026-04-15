@@ -4,6 +4,7 @@
   import { fetchLicenseReport, getLicenseDownloadUrl } from '$lib/services/api';
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
+  import { FileText, ListFilter as Filter, Search, Download } from 'lucide-svelte';
 
   let selectedSeverity: string = 'All';
   let selectedCategory: string = 'All';
@@ -44,64 +45,134 @@
 {:else if !$licenseReports.length}
   <EmptyState message="No license compliance findings." />
 {:else}
-  <div class="space-y-4">
-    <div class="flex flex-wrap gap-3 items-center mb-2">
-      <input class="input input-sm border px-2 py-1 rounded" placeholder="Search file or reason..." bind:value={searchQuery} on:input={handleFilterChange} />
-      <select class="input input-sm border px-2 py-1 rounded" bind:value={selectedSeverity} on:change={handleFilterChange}>
-        {#each availableSeverities as sev}<option>{sev}</option>{/each}
-      </select>
-      <select class="input input-sm border px-2 py-1 rounded" bind:value={selectedCategory} on:change={handleFilterChange}>
-        {#each availableCategories as cat}<option>{cat}</option>{/each}
-      </select>
-      <select class="input input-sm border px-2 py-1 rounded" bind:value={selectedSpdx} on:change={handleFilterChange}>
-        {#each availableSpdx as spdx}<option>{spdx}</option>{/each}
-      </select>
-      <span class="ml-auto text-xs text-slate-500">{totalItems} results</span>
+  <div class="space-y-6">
+    <!-- Header Section -->
+    <div class="bg-gradient-to-r from-blue-50 to-slate-50 rounded-xl p-6 border border-blue-100">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="p-2 rounded-lg bg-blue-600 text-white">
+          <FileText class="w-5 h-5" />
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">License Compliance Report</h2>
+          <p class="text-sm text-slate-600">Review and manage license compliance issues</p>
+        </div>
+      </div>
+
+      <!-- Filters Section -->
+      <div class="bg-white rounded-lg p-4 border border-slate-200">
+        <div class="flex items-center gap-2 mb-3">
+          <Filter class="w-4 h-4 text-slate-500" />
+          <span class="text-sm font-medium text-slate-700">Filters</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="relative">
+            <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Search file or reason..."
+              bind:value={searchQuery}
+              on:input={handleFilterChange}
+            />
+          </div>
+          <select class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" bind:value={selectedSeverity} on:change={handleFilterChange}>
+            {#each availableSeverities as sev}<option>{sev}</option>{/each}
+          </select>
+          <select class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" bind:value={selectedCategory} on:change={handleFilterChange}>
+            {#each availableCategories as cat}<option>{cat}</option>{/each}
+          </select>
+          <select class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" bind:value={selectedSpdx} on:change={handleFilterChange}>
+            {#each availableSpdx as spdx}<option>{spdx}</option>{/each}
+          </select>
+        </div>
+        <div class="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between">
+          <span class="text-sm text-slate-600">
+            <span class="font-semibold text-slate-800">{totalItems}</span> {totalItems === 1 ? 'result' : 'results'} found
+          </span>
+        </div>
+      </div>
     </div>
-    <div class="overflow-x-auto rounded border">
-      <table class="min-w-full text-xs">
-        <thead class="bg-slate-50 border-b">
-          <tr>
-            <th class="px-2 py-1 text-left">File</th>
-            <th>Line</th>
-            <th>Severity</th>
-            <th>Category</th>
-            <th>SPDX</th>
-            <th>Reason</th>
-            <th>Suggestion</th>
-            <th>Download</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each paginated as item}
-            <tr class="border-b hover:bg-slate-50">
-              <td class="px-2 py-1 font-mono break-all">{item.file}</td>
-              <td class="text-center">{item.line}</td>
-              <td class="text-center">{item.severity}</td>
-              <td class="text-center">{item.category}</td>
-              <td class="text-center">{item.spdx_id}</td>
-              <td class="max-w-xs whitespace-pre-line">{item.reason}</td>
-              <td class="max-w-xs whitespace-pre-line">{item.suggestion}</td>
-              <td class="text-center">
-                {#if item.scan_id}
-                  <button class="text-blue-600 underline" on:click={() => download(item.scan_id)}>Download</button>
-                {/if}
-              </td>
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3 text-left font-semibold text-slate-700">File</th>
+              <th class="px-4 py-3 text-center font-semibold text-slate-700">Line</th>
+              <th class="px-4 py-3 text-center font-semibold text-slate-700">Severity</th>
+              <th class="px-4 py-3 text-center font-semibold text-slate-700">Category</th>
+              <th class="px-4 py-3 text-center font-semibold text-slate-700">SPDX ID</th>
+              <th class="px-4 py-3 text-left font-semibold text-slate-700">Reason</th>
+              <th class="px-4 py-3 text-left font-semibold text-slate-700">Suggestion</th>
+              <th class="px-4 py-3 text-center font-semibold text-slate-700">Action</th>
             </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-    <div class="flex items-center gap-2 justify-end mt-2">
-      <span class="text-xs">Page {currentPage} / {totalPages}</span>
-      <button on:click={() => handlePageChange(Math.max(1, currentPage-1))} disabled={currentPage===1}>Prev</button>
-      <button on:click={() => handlePageChange(Math.min(totalPages, currentPage+1))} disabled={currentPage===totalPages}>Next</button>
-      <select bind:value={itemsPerPage} on:change={() => handleItemsPerPageChange(+itemsPerPage)} class="input input-xs border px-1 py-0.5 rounded">
-        <option value="10">10</option>
-        <option value="20">20</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-      </select>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {#each paginated as item}
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 font-mono text-xs text-slate-700">{item.file}</td>
+                <td class="px-4 py-3 text-center text-slate-600">{item.line}</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium {item.severity === 'High' ? 'bg-red-100 text-red-700' : item.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
+                    {item.severity}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-center text-slate-600">{item.category}</td>
+                <td class="px-4 py-3 text-center">
+                  <code class="px-2 py-1 bg-slate-100 rounded text-xs text-slate-700">{item.spdx_id}</code>
+                </td>
+                <td class="px-4 py-3 text-slate-600 max-w-xs">{item.reason}</td>
+                <td class="px-4 py-3 text-slate-600 max-w-xs">{item.suggestion}</td>
+                <td class="px-4 py-3 text-center">
+                  {#if item.scan_id}
+                    <button
+                      class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
+                      on:click={() => download(item.scan_id)}
+                    >
+                      <Download class="w-3 h-3" />
+                      Download
+                    </button>
+                  {/if}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex items-center justify-between">
+        <div class="text-sm text-slate-600">
+          Showing <span class="font-medium text-slate-800">{(currentPage-1)*itemsPerPage + 1}</span> to <span class="font-medium text-slate-800">{Math.min(currentPage*itemsPerPage, totalItems)}</span> of <span class="font-medium text-slate-800">{totalItems}</span> results
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-slate-600">Rows per page:</span>
+          <select bind:value={itemsPerPage} on:change={() => handleItemsPerPageChange(+itemsPerPage)} class="px-2 py-1 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <div class="flex items-center gap-1 ml-4">
+            <button
+              on:click={() => handlePageChange(Math.max(1, currentPage-1))}
+              disabled={currentPage===1}
+              class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <span class="px-3 text-sm text-slate-600">Page {currentPage} of {totalPages}</span>
+            <button
+              on:click={() => handlePageChange(Math.min(totalPages, currentPage+1))}
+              disabled={currentPage===totalPages}
+              class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 {/if}
