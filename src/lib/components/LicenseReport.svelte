@@ -92,54 +92,75 @@
       </div>
     </div>
 
-    <!-- Table Section -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th class="px-4 py-3 text-left font-semibold text-slate-700">File</th>
-              <th class="px-4 py-3 text-center font-semibold text-slate-700">Line</th>
-              <th class="px-4 py-3 text-center font-semibold text-slate-700">Severity</th>
-              <th class="px-4 py-3 text-center font-semibold text-slate-700">Category</th>
-              <th class="px-4 py-3 text-center font-semibold text-slate-700">SPDX ID</th>
-              <th class="px-4 py-3 text-left font-semibold text-slate-700">Reason</th>
-              <th class="px-4 py-3 text-left font-semibold text-slate-700">Suggestion</th>
-              <th class="px-4 py-3 text-center font-semibold text-slate-700">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            {#each paginated as item}
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 font-mono text-xs text-slate-700">{item.file}</td>
-                <td class="px-4 py-3 text-center text-slate-600">{item.line}</td>
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium {item.severity === 'High' ? 'bg-red-100 text-red-700' : item.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
-                    {item.severity}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-center text-slate-600">{item.category}</td>
-                <td class="px-4 py-3 text-center">
-                  <code class="px-2 py-1 bg-slate-100 rounded text-xs text-slate-700">{item.spdx_id}</code>
-                </td>
-                <td class="px-4 py-3 text-slate-600 max-w-xs">{item.reason}</td>
-                <td class="px-4 py-3 text-slate-600 max-w-xs">{item.suggestion}</td>
-                <td class="px-4 py-3 text-center">
-                  {#if item.scan_id}
-                    <button
-                      class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
-                      on:click={() => download(item.scan_id)}
-                    >
-                      <Download class="w-3 h-3" />
-                      Download
-                    </button>
-                  {/if}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+    <!-- Card View Section -->
+    <div class="space-y-4">
+      {#each paginated as item}
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+          <!-- Card Header -->
+          <div class="bg-slate-50 px-4 py-3 border-b border-slate-200">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <FileText class="w-4 h-4 text-blue-600 flex-shrink-0" />
+                <div class="min-w-0 flex-1">
+                  <div class="font-mono text-sm text-slate-700 truncate">{item.file}</div>
+                  <div class="text-xs text-slate-500">Line {item.line}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium {item.severity === 'High' ? 'bg-red-100 text-red-700' : item.severity === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
+                  {item.severity}
+                </span>
+                <span class="px-2 py-1 bg-slate-100 rounded text-xs text-slate-700">
+                  {item.category}
+                </span>
+                <code class="px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 font-mono">
+                  {item.spdx_id}
+                </code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Content -->
+          <div class="p-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                  <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Issue</div>
+                </div>
+                <p class="text-sm text-slate-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 leading-relaxed">
+                  {item.reason}
+                </p>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Recommendation</div>
+                </div>
+                <p class="text-sm text-slate-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5 leading-relaxed">
+                  {item.suggestion}
+                </p>
+              </div>
+            </div>
+
+            {#if item.scan_id}
+              <div class="mt-4 pt-4 border-t border-slate-200 flex justify-end">
+                <button
+                  class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm hover:shadow"
+                  on:click={() => download(item.scan_id)}
+                >
+                  <Download class="w-4 h-4" />
+                  Download Report
+                </button>
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/each}
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+    >
 
       <!-- Pagination -->
       <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex items-center justify-between">

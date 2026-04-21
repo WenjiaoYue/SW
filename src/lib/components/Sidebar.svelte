@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { GitBranch, Radar, BookOpen, Cpu, AlertTriangle, Wrench, RefreshCw, Shield, FileText, Ban } from 'lucide-svelte';
+  import { GitBranch, Radar, BookOpen, Cpu, TriangleAlert as AlertTriangle, Wrench, RefreshCw, Shield, FileText, Ban } from 'lucide-svelte';
   import { currentView } from '$lib/stores/appStore';
   import type { ViewType } from '$lib/stores/appStore';
 
@@ -17,27 +17,6 @@
   </div>
 
   <nav class="flex-1 p-4 space-y-2">
-        <button
-          on:click={() => switchView('license')}
-          class="nav-btn w-full flex items-center px-4 py-3 mb-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-          class:active={$currentView === 'license'}
-        >
-          <FileText class="w-4 h-4 mr-3" />
-          <span class="text-sm">License Compliance</span>
-        </button>
-
-        <button
-          on:click={() => switchView('sycl')}
-          class="nav-btn w-full flex items-center px-4 py-3 mb-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-          class:active={$currentView === 'sycl'}
-        >
-          <Ban class="w-4 h-4 mr-3" />
-          <span class="text-sm">SYCL Deprecation</span>
-        </button>
-    <!-- <div class="px-3 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-      Menu
-    </div> -->
-
     <button
       on:click={() => switchView('repo')}
       class="nav-btn w-full flex items-center px-4 py-3 mb-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
@@ -106,6 +85,24 @@
         </li>
       </ul>
     </div>
+
+    <button
+      on:click={() => switchView('license')}
+      class="nav-btn w-full flex items-center px-4 py-3 mb-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+      class:active={$currentView === 'license'}
+    >
+      <FileText class="w-4 h-4 mr-3" />
+      <span class="text-sm">License Compliance</span>
+    </button>
+
+    <button
+      on:click={() => switchView('sycl')}
+      class="nav-btn w-full flex items-center px-4 py-3 mb-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+      class:active={$currentView === 'sycl'}
+    >
+      <Ban class="w-4 h-4 mr-3" />
+      <span class="text-sm">SYCL Deprecation</span>
+    </button>
   </nav>
 
   <!-- <div class="p-4 border-t border-slate-200">

@@ -1,131 +1,70 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { repoFixes, repoFixesLoading, repoFixesError, currentProject } from '$lib/stores/appStore';
-  import { fetchRepoFixes } from '$lib/services/api';
+  import { repoFixes, repoFixesLoading, repoFixesError } from '$lib/stores/appStore';
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
   import Pagination from './Pagination.svelte';
   import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Info, FileCode, Lightbulb } from 'lucide-svelte';
 
-  let selectedSeverity: string = 'All';
-  let selectedCategory: string = 'All';
+  let selectedVerdict: string = 'All';
+  let selectedSubGoal: string = 'All';
   let searchQuery: string = '';
-  let cudaValidatedFilter: string = 'All';
   let currentPage = 1;
   let itemsPerPage = 10;
 
-  const severityColors: Record<string, string> = {
-    critical: 'text-red-600 bg-red-50 border-red-200',
-    high: 'text-orange-600 bg-orange-50 border-orange-200',
-    medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-    low: 'text-blue-600 bg-blue-50 border-blue-200'
-  };
-
-  const severityIcons: Record<string, any> = {
-    critical: XCircle,
-    high: AlertTriangle,
-    medium: Info,
-    low: CheckCircle
-  };
-
-  $: availableSeverities = ['All', ...Array.from(new Set($repoFixes.map((f: any) => f.severity)))];
-  $: availableCategories = ['All', ...Array.from(new Set($repoFixes.map((f: any) => f.category)))];
+  $: availableVerdicts = ['All', ...Array.from(new Set($repoFixes.map((f: any) => f.verdict).filter(Boolean)))];
+  $: availableSubGoals = ['All', ...Array.from(new Set($repoFixes.map((f: any) => f.sub_goal).filter(Boolean)))];
 
   $: filteredFixes = $repoFixes.filter((fix: any) => {
-    const severityMatch = selectedSeverity === 'All' || fix.severity === selectedSeverity;
-    const categoryMatch = selectedCategory === 'All' || fix.category === selectedCategory;
-    const cudaMatch = cudaValidatedFilter === 'All' ||
-      (cudaValidatedFilter === 'validated' && fix.cuda_validated) ||
-      (cudaValidatedFilter === 'not_validated' && !fix.cuda_validated);
+    const verdictMatch = selectedVerdict === 'All' || fix.verdict === selectedVerdict;
+    const subGoalMatch = selectedSubGoal === 'All' || fix.sub_goal === selectedSubGoal;
     const searchMatch = !searchQuery ||
-      fix.file_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fix.original_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fix.suggested_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fix.operation_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    return severityMatch && categoryMatch && cudaMatch && searchMatch;
+      fix.op_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fix.detail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fix.sub_goal?.toLowerCase().includes(searchQuery.toLowerCase());
+    return verdictMatch && subGoalMatch && searchMatch;
   });
 
   $: totalItems = filteredFixes.length;
   $: totalPages = Math.ceil(totalItems / itemsPerPage);
-  $: paginatedFixes = filteredFixes.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  $: paginatedFixes = filteredFixes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  async function loadData() {
-    repoFixesLoading.set(true);
-    repoFixesError.set(null);
+  function handlePageChange(page: number) { currentPage = page; }
+  function handleItemsPerPageChange(n: number) { itemsPerPage = n; currentPage = 1; }
+  function handleFilterChange() { currentPage = 1; }
 
-    try {
-      const data = await fetchRepoFixes({
-        page: 1,
-        page_size: 1000
-      });
-      repoFixes.set(data.data || []);
-    } catch (error: any) {
-      repoFixesError.set(error.message || 'Failed to load data');
-    } finally {
-      repoFixesLoading.set(false);
-    }
-  }
-
-  onMount(() => {
-    // Data is pre-loaded by dataLoader.ts; nothing to do here.
-  });
-
-  function handlePageChange(page: number) {
-    currentPage = page;
-  }
-
-  function handleItemsPerPageChange(newItemsPerPage: number) {
-    itemsPerPage = newItemsPerPage;
-    currentPage = 1;
-  }
-
-  function handleFilterChange() {
-    currentPage = 1;
-  }
-
-  function getSeverityIcon(severity: string) {
-    return severityIcons[severity] || Info;
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
+  const verdictColors: Record<string, string> = {
+    confirmed: 'text-green-700 bg-green-50 border-green-200',
+    not_applicable: 'text-slate-600 bg-slate-50 border-slate-200',
+    gap: 'text-red-700 bg-red-50 border-red-200',
+    partial: 'text-yellow-700 bg-yellow-50 border-yellow-200',
+  };
 </script>
 
 {#if $repoFixesLoading}
   <LoadingState
-    title="Loading Repo Fixes"
-    footerText="Scanning repository for potential issues and fixes..."
+    title="Loading Scan Results"
+    footerText="Scanning goal 1 results..."
     steps={[
-      { icon: FileCode, label: 'Scanning source files...', color: 'text-blue-600' },
-      { icon: AlertTriangle, label: 'Identifying issues...', color: 'text-orange-600' },
-      { icon: Lightbulb, label: 'Generating suggestions...', color: 'text-green-600' }
+      { icon: FileCode, label: 'Fetching scan results...', color: 'text-blue-600' },
+      { icon: AlertTriangle, label: 'Analyzing operators...', color: 'text-orange-600' },
+      { icon: Lightbulb, label: 'Processing verdicts...', color: 'text-green-600' }
     ]}
   />
 {:else if $repoFixes.length === 0}
   <EmptyState
     icon={CheckCircle}
-    title="No Issues Found"
-    message="Repository scan completed with no issues detected."
+    title="No Results Found"
+    message="No scan results found."
   />
 {:else}
   <div class="space-y-6">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div class="flex items-center gap-4 mb-6">
+      <div class="flex items-center gap-4 mb-5">
         <input
           type="text"
           bind:value={searchQuery}
           on:input={handleFilterChange}
-          placeholder="Search by file, code, or operation name..."
+          placeholder="Search by op name, detail, or sub goal..."
           class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
         />
         <div class="flex items-center gap-2 text-sm whitespace-nowrap">
@@ -135,62 +74,42 @@
       </div>
 
       <div class="space-y-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Severity</label>
+            <div class="text-xs font-semibold text-slate-700 mb-1.5 block">Verdict</div>
             <div class="flex flex-wrap gap-2">
-              {#each availableSeverities as severity}
+              {#each availableVerdicts as verdict}
                 <button
-                  on:click={() => { selectedSeverity = severity; handleFilterChange(); }}
+                  on:click={() => { selectedVerdict = verdict; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
-                  class:bg-slate-800={selectedSeverity === severity}
-                  class:text-white={selectedSeverity === severity}
-                  class:bg-white={selectedSeverity !== severity}
-                  class:text-slate-600={selectedSeverity !== severity}
-                  class:border-slate-300={selectedSeverity !== severity}
-                  class:border-slate-800={selectedSeverity === severity}
+                  class:bg-slate-800={selectedVerdict === verdict}
+                  class:text-white={selectedVerdict === verdict}
+                  class:bg-white={selectedVerdict !== verdict}
+                  class:text-slate-600={selectedVerdict !== verdict}
+                  class:border-slate-300={selectedVerdict !== verdict}
+                  class:border-slate-800={selectedVerdict === verdict}
                 >
-                  {severity}
+                  {verdict.replace(/_/g, ' ')}
                 </button>
               {/each}
             </div>
           </div>
 
           <div>
-            <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Category</label>
+            <div class="text-xs font-semibold text-slate-700 mb-1.5 block">Sub Goal</div>
             <div class="flex flex-wrap gap-2">
-              {#each availableCategories as category}
+              {#each availableSubGoals as sg}
                 <button
-                  on:click={() => { selectedCategory = category; handleFilterChange(); }}
+                  on:click={() => { selectedSubGoal = sg; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
-                  class:bg-slate-800={selectedCategory === category}
-                  class:text-white={selectedCategory === category}
-                  class:bg-white={selectedCategory !== category}
-                  class:text-slate-600={selectedCategory !== category}
-                  class:border-slate-300={selectedCategory !== category}
-                  class:border-slate-800={selectedCategory === category}
+                  class:bg-slate-800={selectedSubGoal === sg}
+                  class:text-white={selectedSubGoal === sg}
+                  class:bg-white={selectedSubGoal !== sg}
+                  class:text-slate-600={selectedSubGoal !== sg}
+                  class:border-slate-300={selectedSubGoal !== sg}
+                  class:border-slate-800={selectedSubGoal === sg}
                 >
-                  {category.replace(/-/g, ' ')}
-                </button>
-              {/each}
-            </div>
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold text-slate-700 mb-1.5 block">CUDA Validation</label>
-            <div class="flex flex-wrap gap-2">
-              {#each ['All', 'validated', 'not_validated'] as option}
-                <button
-                  on:click={() => { cudaValidatedFilter = option; handleFilterChange(); }}
-                  class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
-                  class:bg-slate-800={cudaValidatedFilter === option}
-                  class:text-white={cudaValidatedFilter === option}
-                  class:bg-white={cudaValidatedFilter !== option}
-                  class:text-slate-600={cudaValidatedFilter !== option}
-                  class:border-slate-300={cudaValidatedFilter !== option}
-                  class:border-slate-800={cudaValidatedFilter === option}
-                >
-                  {option.replace(/_/g, ' ')}
+                  {sg.replace(/_/g, ' ')}
                 </button>
               {/each}
             </div>
@@ -200,98 +119,77 @@
 
       <div class="space-y-3">
         {#each paginatedFixes as fix}
-          <div class="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-all">
-            <div class="flex items-start gap-4">
-              <div class="p-2 rounded-lg {severityColors[fix.severity] || 'bg-slate-100 text-slate-600'}">
-                <svelte:component this={getSeverityIcon(fix.severity)} class="w-5 h-5" />
-              </div>
-
-              <div class="flex-1 space-y-3">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
-                      <FileCode class="w-4 h-4 text-slate-500" />
-                      <code class="text-sm font-mono text-slate-700">{fix.file}</code>
-                      <span class="text-xs text-slate-500">Line {fix.line}</span>
-                    </div>
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <span class="px-2 py-0.5 text-xs font-medium rounded {severityColors[fix.severity] || 'bg-slate-100 text-slate-600'} border">
-                        {fix.severity}
-                      </span>
-                      <span class="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-600 border border-slate-200">
-                        {fix.category.replace(/-/g, ' ')}
-                      </span>
-                      {#if fix.cuda_validated}
-                        <span class="px-2 py-0.5 text-xs font-medium rounded bg-green-50 text-green-600 border border-green-200">
-                          CUDA Validated
-                        </span>
-                      {/if}
-                      {#if fix.op_name}
-                        <span class="px-2 py-0.5 text-xs font-medium rounded bg-blue-50 text-blue-600 border border-blue-200">
-                          {fix.op_name}
-                        </span>
-                      {/if}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                  <h4 class="text-xs font-semibold text-slate-700 mb-1">Code</h4>
-                  <pre class="text-xs font-mono text-slate-800 whitespace-pre-wrap break-all">{fix.code}</pre>
-                </div>
-
-                <div class="space-y-2">
-                  <div>
-                    <h4 class="text-xs font-semibold text-slate-700 mb-1 uppercase tracking-wide">Reason</h4>
-                    <p class="text-sm text-slate-600">{fix.reason}</p>
-                  </div>
-
-                  <div>
-                    <h4 class="text-xs font-semibold text-green-700 mb-1 uppercase tracking-wide flex items-center gap-1">
-                      <Lightbulb class="w-3 h-3" />
-                      Suggestion
-                    </h4>
-                    <p class="text-sm text-slate-600">{fix.suggestion}</p>
-                  </div>
-                </div>
-
-                {#if fix.cuda_validated && fix.cuda_has_same_issue !== null}
-                  <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                    <div class="flex items-start gap-2">
-                      <Info class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div class="flex-1">
-                        <h4 class="text-xs font-semibold text-blue-800 mb-1">CUDA Validation</h4>
-                        <p class="text-xs text-blue-700">
-                          {fix.cuda_has_same_issue ? 'CUDA has the same issue' : 'CUDA does not have this issue'}
-                        </p>
-                        {#if fix.adjusted_severity}
-                          <p class="text-xs text-blue-600 mt-1">
-                            Adjusted Severity: <span class="font-semibold">{fix.adjusted_severity}</span>
-                          </p>
-                        {/if}
-                        {#if fix.validation_reason}
-                          <p class="text-xs text-blue-600 mt-1">{fix.validation_reason}</p>
-                        {/if}
-                        {#if fix.cuda_file}
-                          <p class="text-xs text-blue-600 mt-1 font-mono">
-                            File: {fix.cuda_file}
-                            {#if fix.cuda_function}
-                              ({fix.cuda_function})
-                            {/if}
-                          </p>
-                        {/if}
-                      </div>
-                    </div>
-                  </div>
-                {/if}
-
-                <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-                  <span class="text-xs text-slate-500">
-                    Scanned: {formatDate(fix.scanned_at)}
+          <div class="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all bg-white">
+            <div class="flex items-start justify-between gap-4 mb-3">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-base font-semibold text-slate-800 mb-1">{fix.op_name}</h3>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-2 py-0.5 text-xs font-medium rounded bg-blue-50 text-blue-700 border border-blue-200">
+                    Goal {fix.goal}
                   </span>
+                  {#if fix.sub_goal}
+                    <span class="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-600 border border-slate-200">
+                      {fix.sub_goal.replace(/_/g, ' ')}
+                    </span>
+                  {/if}
                 </div>
+              </div>
+              <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+                {#if fix.verdict}
+                  <span class="px-2.5 py-1 text-xs font-semibold rounded-lg border {verdictColors[fix.verdict] || 'text-slate-600 bg-slate-50 border-slate-200'}">
+                    {fix.verdict.replace(/_/g, ' ').toUpperCase()}
+                  </span>
+                {/if}
+                {#if fix.confidence}
+                  <span class="text-xs text-slate-500">confidence: {fix.confidence}</span>
+                {/if}
               </div>
             </div>
+
+            {#if fix.detail}
+              <div class="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Detail</div>
+                <p class="text-sm text-slate-700 leading-relaxed">{fix.detail}</p>
+              </div>
+            {/if}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {#if fix.xpu_evidence}
+                <div class="p-2.5 bg-orange-50 rounded-lg border border-orange-200">
+                  <div class="text-xs font-semibold text-orange-800 mb-1">XPU Evidence</div>
+                  <p class="text-xs text-orange-700 leading-relaxed">{fix.xpu_evidence}</p>
+                </div>
+              {/if}
+              {#if fix.cuda_evidence}
+                <div class="p-2.5 bg-green-50 rounded-lg border border-green-200">
+                  <div class="text-xs font-semibold text-green-800 mb-1">CUDA Evidence</div>
+                  <p class="text-xs text-green-700 leading-relaxed">{fix.cuda_evidence}</p>
+                </div>
+              {/if}
+            </div>
+
+            {#if fix.cuda_peer_evidence}
+              <div class="mt-3 p-2.5 bg-teal-50 rounded-lg border border-teal-200">
+                <div class="text-xs font-semibold text-teal-800 mb-1">CUDA Peer Evidence</div>
+                <p class="text-xs text-teal-700 leading-relaxed">{fix.cuda_peer_evidence}</p>
+              </div>
+            {/if}
+
+            {#if fix.dec_backed_by_cuda !== null && fix.dec_backed_by_cuda !== undefined}
+              <div class="mt-3 flex items-center gap-2 text-xs">
+                <span class="text-slate-500">CUDA Backed:</span>
+                <span class="font-medium {fix.dec_backed_by_cuda ? 'text-green-700' : 'text-slate-600'}">
+                  {fix.dec_backed_by_cuda ? 'Yes' : 'No'}
+                </span>
+              </div>
+            {/if}
+
+            {#if fix.verification_status}
+              <div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
+                <span>Verification:</span>
+                <span class="font-medium text-slate-700">{fix.verification_status}</span>
+              </div>
+            {/if}
           </div>
         {/each}
       </div>

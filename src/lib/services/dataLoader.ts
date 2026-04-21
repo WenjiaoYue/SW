@@ -46,10 +46,10 @@ import { repoData, isLoadingData, dataError, cachedRepoData } from '$lib/stores/
 import {
   fetchGitHubTopics,
   fetchHFModels,
-  fetchPotentialIssues,
-  fetchRepoFixes,
+  fetchGetReport,
+  fetchGetScanResults,
   fetchXPUSync,
-  fetchScanReport,
+  fetchGetScanReport,
   fetchTritonOps,
   fetchTritonInsights,
   fetchLicenseReport,
@@ -132,8 +132,7 @@ async function loadPotentialIssues() {
   potentialIssuesLoading.set(true);
   potentialIssuesError.set(null);
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const data = await fetchPotentialIssues({ date: today, page: 1, page_size: 1000 });
+    const data = await fetchGetReport({});
     potentialIssues.set(data.data || []);
     loaded.issues = true;
   } catch (err) {
@@ -148,7 +147,7 @@ async function loadRepoFixes() {
   repoFixesLoading.set(true);
   repoFixesError.set(null);
   try {
-    const data = await fetchRepoFixes({ page: 1, page_size: 1000 });
+    const data = await fetchGetScanResults({});
     repoFixes.set(data.data || []);
     loaded.fixes = true;
   } catch (err) {
@@ -178,7 +177,7 @@ async function loadScanReport() {
   scanReportsLoading.set(true);
   scanReportsError.set(null);
   try {
-    const data = await fetchScanReport({ page: 1, page_size: 1000 });
+    const data = await fetchGetScanReport({});
     scanReports.set(data.data || []);
     loaded.scan = true;
   } catch (err) {

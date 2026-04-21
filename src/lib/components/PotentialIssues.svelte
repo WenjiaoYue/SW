@@ -1,131 +1,88 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { potentialIssues, potentialIssuesLoading, potentialIssuesError, currentProject } from '$lib/stores/appStore';
-  import { fetchPotentialIssues } from '$lib/services/api';
+  import { potentialIssues, potentialIssuesLoading, potentialIssuesError } from '$lib/stores/appStore';
+  import { fetchGetReport } from '$lib/services/api';
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
   import Pagination from './Pagination.svelte';
-  import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Info, FileText, Calendar } from 'lucide-svelte';
+  import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Info, FileText } from 'lucide-svelte';
 
-  let selectedSeverity: string = 'All';
+  let selectedVerdict: string = 'All';
   let selectedCategory: string = 'All';
+  let selectedGoal: string = 'All';
   let searchQuery: string = '';
   let currentPage = 1;
   let itemsPerPage = 10;
-  let selectedDate: string = new Date().toISOString().split('T')[0];
 
-  const severityColors: Record<string, string> = {
-    critical: 'text-red-600 bg-red-50 border-red-200',
-    high: 'text-orange-600 bg-orange-50 border-orange-200',
-    medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-    low: 'text-blue-600 bg-blue-50 border-blue-200'
-  };
+  $: availableVerdicts = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => i.verdict).filter(Boolean)))];
+  $: availableCategories = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => i.report_category).filter(Boolean)))];
+  $: availableGoals = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => String(i.goal)).filter(Boolean)))];
 
-  const severityIcons: Record<string, any> = {
-    critical: XCircle,
-    high: AlertTriangle,
-    medium: Info,
-    low: CheckCircle
-  };
-
-  $: availableSeverities = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => i.severity)))];
-  $: availableCategories = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => i.category)))];
-
-  $: filteredIssues = $potentialIssues.filter((issue: any) => {
-    const severityMatch = selectedSeverity === 'All' || issue.severity === selectedSeverity;
-    const categoryMatch = selectedCategory === 'All' || issue.category === selectedCategory;
+  $: filtered = $potentialIssues.filter((item: any) => {
+    const verdictMatch = selectedVerdict === 'All' || item.verdict === selectedVerdict;
+    const categoryMatch = selectedCategory === 'All' || item.report_category === selectedCategory;
+    const goalMatch = selectedGoal === 'All' || String(item.goal) === selectedGoal;
     const searchMatch = !searchQuery ||
-      issue.operation_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      issue.details?.toLowerCase().includes(searchQuery.toLowerCase());
-    return severityMatch && categoryMatch && searchMatch;
+      item.op_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.detail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sub_goal?.toLowerCase().includes(searchQuery.toLowerCase());
+    return verdictMatch && categoryMatch && goalMatch && searchMatch;
   });
 
-  $: totalItems = filteredIssues.length;
+  $: totalItems = filtered.length;
   $: totalPages = Math.ceil(totalItems / itemsPerPage);
-  $: paginatedIssues = filteredIssues.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  $: paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  async function loadData() {
+  function handleFilterChange() { currentPage = 1; }
+  function handlePageChange(page: number) { currentPage = page; }
+  function handleItemsPerPageChange(n: number) { itemsPerPage = n; currentPage = 1; }
+
+  async function reloadWithGoal(goal: string) {
     potentialIssuesLoading.set(true);
     potentialIssuesError.set(null);
-
     try {
-      const data = await fetchPotentialIssues({
-        date: selectedDate,
-        page: 1,
-        page_size: 1000
-      });
+      const req = goal === 'All' ? {} : { goal: Number(goal) as 2 | 3 };
+      const data = await fetchGetReport(req);
       potentialIssues.set(data.data || []);
-    } catch (error: any) {
-      potentialIssuesError.set(error.message || 'Failed to load data');
+    } catch (err: any) {
+      potentialIssuesError.set(err.message || 'Failed to load data');
     } finally {
       potentialIssuesLoading.set(false);
     }
   }
 
-  onMount(() => {
-    // Data is pre-loaded by dataLoader.ts; nothing to do here.
-  });
-
-  async function handleDateChange() {
-    currentPage = 1;
-    await loadData();
-  }
-
-  function handlePageChange(page: number) {
-    currentPage = page;
-  }
-
-  function handleItemsPerPageChange(newItemsPerPage: number) {
-    itemsPerPage = newItemsPerPage;
-    currentPage = 1;
-  }
-
-  function handleFilterChange() {
-    currentPage = 1;
-  }
-
-  function getSeverityIcon(severity: string) {
-    return severityIcons[severity] || Info;
-  }
+  const verdictColors: Record<string, string> = {
+    confirmed: 'text-green-700 bg-green-50 border-green-200',
+    not_applicable: 'text-slate-600 bg-slate-50 border-slate-200',
+    gap: 'text-red-700 bg-red-50 border-red-200',
+    partial: 'text-yellow-700 bg-yellow-50 border-yellow-200',
+  };
 </script>
 
 {#if $potentialIssuesLoading}
   <LoadingState
-    title="Loading Potential Issues"
-    footerText="Analyzing validation gaps and compatibility issues..."
+    title="Loading Validation Report"
+    footerText="Analyzing goal 2 & 3 results..."
     steps={[
-      { icon: FileText, label: 'Fetching validation reports...', color: 'text-blue-600' },
-      { icon: AlertTriangle, label: 'Analyzing severity levels...', color: 'text-orange-600' },
-      { icon: Info, label: 'Processing recommendations...', color: 'text-green-600' }
+      { icon: FileText, label: 'Fetching reports...', color: 'text-blue-600' },
+      { icon: AlertTriangle, label: 'Analyzing verdicts...', color: 'text-orange-600' },
+      { icon: Info, label: 'Processing details...', color: 'text-green-600' }
     ]}
   />
 {:else if $potentialIssues.length === 0}
   <EmptyState
     icon={CheckCircle}
-    title="No Issues Found"
-    message="No potential issues detected in the current validation report."
+    title="No Results Found"
+    message="No validation results found for the current report."
   />
 {:else}
   <div class="space-y-6">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div class="flex items-center gap-4 mb-6">
-        <div class="flex items-center gap-2">
-          <Calendar class="w-4 h-4 text-slate-500" />
-          <input
-            type="date"
-            bind:value={selectedDate}
-            on:change={handleDateChange}
-            class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+      <div class="flex items-center gap-4 mb-5">
         <input
           type="text"
           bind:value={searchQuery}
           on:input={handleFilterChange}
-          placeholder="Search by operation name or details..."
+          placeholder="Search by op name, detail, or sub goal..."
           class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
         <div class="flex items-center gap-2 text-sm whitespace-nowrap">
@@ -135,43 +92,62 @@
       </div>
 
       <div class="space-y-4 mb-6">
-
-        <div class="flex gap-4">
-          <div class="flex-1">
-            <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Severity</label>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <div class="text-xs font-semibold text-slate-700 mb-1.5 block">Goal</div>
             <div class="flex flex-wrap gap-2">
-              {#each availableSeverities as severity}
+              {#each availableGoals as g}
                 <button
-                  on:click={() => { selectedSeverity = severity; handleFilterChange(); }}
+                  on:click={() => { selectedGoal = g; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
-                  class:bg-slate-800={selectedSeverity === severity}
-                  class:text-white={selectedSeverity === severity}
-                  class:bg-white={selectedSeverity !== severity}
-                  class:text-slate-600={selectedSeverity !== severity}
-                  class:border-slate-300={selectedSeverity !== severity}
-                  class:border-slate-800={selectedSeverity === severity}
+                  class:bg-slate-800={selectedGoal === g}
+                  class:text-white={selectedGoal === g}
+                  class:bg-white={selectedGoal !== g}
+                  class:text-slate-600={selectedGoal !== g}
+                  class:border-slate-300={selectedGoal !== g}
+                  class:border-slate-800={selectedGoal === g}
                 >
-                  {severity}
+                  {g === 'All' ? 'All' : `Goal ${g}`}
                 </button>
               {/each}
             </div>
           </div>
 
-          <div class="flex-1">
-            <label class="text-xs font-semibold text-slate-700 mb-1.5 block">Category</label>
+          <div>
+            <div class="text-xs font-semibold text-slate-700 mb-1.5 block">Verdict</div>
             <div class="flex flex-wrap gap-2">
-              {#each availableCategories as category}
+              {#each availableVerdicts as verdict}
                 <button
-                  on:click={() => { selectedCategory = category; handleFilterChange(); }}
+                  on:click={() => { selectedVerdict = verdict; handleFilterChange(); }}
                   class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
-                  class:bg-slate-800={selectedCategory === category}
-                  class:text-white={selectedCategory === category}
-                  class:bg-white={selectedCategory !== category}
-                  class:text-slate-600={selectedCategory !== category}
-                  class:border-slate-300={selectedCategory !== category}
-                  class:border-slate-800={selectedCategory === category}
+                  class:bg-slate-800={selectedVerdict === verdict}
+                  class:text-white={selectedVerdict === verdict}
+                  class:bg-white={selectedVerdict !== verdict}
+                  class:text-slate-600={selectedVerdict !== verdict}
+                  class:border-slate-300={selectedVerdict !== verdict}
+                  class:border-slate-800={selectedVerdict === verdict}
                 >
-                  {category.replace(/_/g, ' ')}
+                  {verdict.replace(/_/g, ' ')}
+                </button>
+              {/each}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-semibold text-slate-700 mb-1.5 block">Category</div>
+            <div class="flex flex-wrap gap-2">
+              {#each availableCategories as cat}
+                <button
+                  on:click={() => { selectedCategory = cat; handleFilterChange(); }}
+                  class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all border"
+                  class:bg-slate-800={selectedCategory === cat}
+                  class:text-white={selectedCategory === cat}
+                  class:bg-white={selectedCategory !== cat}
+                  class:text-slate-600={selectedCategory !== cat}
+                  class:border-slate-300={selectedCategory !== cat}
+                  class:border-slate-800={selectedCategory === cat}
+                >
+                  {cat.replace(/_/g, ' ')}
                 </button>
               {/each}
             </div>
@@ -180,58 +156,82 @@
       </div>
 
       <div class="space-y-3">
-        {#each paginatedIssues as issue}
-          <div class="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-all">
-            <div class="flex items-start gap-4">
-              <div class="p-2 rounded-lg {severityColors[issue.severity] || 'bg-slate-100 text-slate-600'}">
-                <svelte:component this={getSeverityIcon(issue.severity)} class="w-5 h-5" />
+        {#each paginated as item}
+          <div class="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all bg-white">
+            <div class="flex items-start justify-between gap-4 mb-3">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-base font-semibold text-slate-800 mb-1">{item.op_name}</h3>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-2 py-0.5 text-xs font-medium rounded bg-blue-50 text-blue-700 border border-blue-200">
+                    Goal {item.goal}
+                  </span>
+                  {#if item.sub_goal}
+                    <span class="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-600 border border-slate-200">
+                      {item.sub_goal.replace(/_/g, ' ')}
+                    </span>
+                  {/if}
+                  {#if item.report_category}
+                    <span class="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-600 border border-slate-200">
+                      {item.report_category.replace(/_/g, ' ')}
+                    </span>
+                  {/if}
+                </div>
               </div>
-
-              <div class="flex-1 space-y-3">
-                <div class="flex items-start justify-between">
-                  <div>
-                    <h3 class="text-lg font-semibold text-slate-800">{issue.op_name}</h3>
-                    <div class="flex items-center gap-3 mt-1">
-                      <span class="px-2 py-0.5 text-xs font-medium rounded {severityColors[issue.severity] || 'bg-slate-100 text-slate-600'} border">
-                        {issue.severity}
-                      </span>
-                      <span class="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-600 border border-slate-200">
-                        {issue.category.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {#if issue.details}
-                  <div class="space-y-1">
-                    <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Details</h4>
-                    <p class="text-sm text-slate-600">{issue.details}</p>
-                  </div>
+              <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+                {#if item.verdict}
+                  <span class="px-2.5 py-1 text-xs font-semibold rounded-lg border {verdictColors[item.verdict] || 'text-slate-600 bg-slate-50 border-slate-200'}">
+                    {item.verdict.replace(/_/g, ' ').toUpperCase()}
+                  </span>
                 {/if}
-
-                {#if issue.recommendation}
-                  <div class="space-y-1">
-                    <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Recommendation</h4>
-                    <p class="text-sm text-slate-600">{issue.recommendation}</p>
-                  </div>
+                {#if item.confidence}
+                  <span class="text-xs text-slate-500">confidence: {item.confidence}</span>
                 {/if}
-
-                <div class="flex gap-4 pt-2 border-t border-slate-100">
-                  {#if issue.cuda_file}
-                    <div class="text-xs">
-                      <span class="text-slate-500">CUDA File:</span>
-                      <span class="text-slate-700 font-mono ml-1">{issue.cuda_file}</span>
-                    </div>
-                  {/if}
-                  {#if issue.xpu_file}
-                    <div class="text-xs">
-                      <span class="text-slate-500">XPU File:</span>
-                      <span class="text-slate-700 font-mono ml-1">{issue.xpu_file}</span>
-                    </div>
-                  {/if}
-                </div>
               </div>
             </div>
+
+            {#if item.detail}
+              <div class="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Detail</div>
+                <p class="text-sm text-slate-700 leading-relaxed">{item.detail}</p>
+              </div>
+            {/if}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {#if item.xpu_evidence}
+                <div class="p-2.5 bg-orange-50 rounded-lg border border-orange-200">
+                  <div class="text-xs font-semibold text-orange-800 mb-1">XPU Evidence</div>
+                  <p class="text-xs text-orange-700 leading-relaxed">{item.xpu_evidence}</p>
+                </div>
+              {/if}
+              {#if item.cuda_evidence}
+                <div class="p-2.5 bg-green-50 rounded-lg border border-green-200">
+                  <div class="text-xs font-semibold text-green-800 mb-1">CUDA Evidence</div>
+                  <p class="text-xs text-green-700 leading-relaxed">{item.cuda_evidence}</p>
+                </div>
+              {/if}
+            </div>
+
+            {#if item.diff_category || item.gap_category}
+              <div class="mt-3 flex items-center gap-3 text-xs">
+                {#if item.diff_category}
+                  <span class="px-2 py-0.5 rounded bg-yellow-50 border border-yellow-200 text-yellow-700">
+                    diff: {item.diff_category.replace(/_/g, ' ')}
+                  </span>
+                {/if}
+                {#if item.gap_category}
+                  <span class="px-2 py-0.5 rounded bg-red-50 border border-red-200 text-red-700">
+                    gap: {item.gap_category.replace(/_/g, ' ')}
+                  </span>
+                {/if}
+              </div>
+            {/if}
+
+            {#if item.verification_status}
+              <div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
+                <span>Verification:</span>
+                <span class="font-medium text-slate-700">{item.verification_status}</span>
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
@@ -248,11 +248,3 @@
     {/if}
   </div>
 {/if}
-
-<style>
-  .nav-btn.active {
-    background: linear-gradient(to right, #1e293b, #334155);
-    color: white;
-    font-weight: 600;
-  }
-</style>

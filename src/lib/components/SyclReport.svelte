@@ -131,28 +131,47 @@
           </div>
 
           <!-- Card Content -->
-          <div class="p-4 space-y-3">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="p-4 space-y-4">
+            <!-- Symbol and Code Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Symbol</div>
-                <code class="block px-3 py-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-800 font-mono">
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
+                  <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Deprecated Symbol</div>
+                </div>
+                <code class="block px-3 py-2.5 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800 font-mono">
                   {item.symbol}
                 </code>
               </div>
               <div>
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Code</div>
-                <pre class="px-3 py-2 bg-slate-900 text-slate-100 rounded text-xs font-mono overflow-x-auto">{item.code}</pre>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
+                  <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Code Context</div>
+                </div>
+                <pre class="px-3 py-2.5 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed">{item.code}</pre>
               </div>
             </div>
 
-            <div>
-              <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Reason</div>
-              <p class="text-sm text-slate-700 bg-slate-50 rounded px-3 py-2">{item.reason}</p>
-            </div>
-
-            <div>
-              <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Suggestion</div>
-              <p class="text-sm text-slate-700 bg-green-50 border border-green-200 rounded px-3 py-2">{item.suggestion}</p>
+            <!-- Reason and Suggestion Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                  <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Why It's Deprecated</div>
+                </div>
+                <p class="text-sm text-slate-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 leading-relaxed">
+                  {item.reason}
+                </p>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">How to Fix</div>
+                </div>
+                <p class="text-sm text-slate-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5 leading-relaxed">
+                  {item.suggestion}
+                </p>
+              </div>
             </div>
 
             {#if item.llm_analysis}
