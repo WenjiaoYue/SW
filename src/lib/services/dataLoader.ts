@@ -127,7 +127,7 @@ async function loadModels() {
   }
 }
 
-async function loadPotentialIssues() {
+async function loadPotentialIssues() {  
   if (loaded.issues) return;
   potentialIssuesLoading.set(true);
   potentialIssuesError.set(null);
@@ -142,7 +142,7 @@ async function loadPotentialIssues() {
   }
 }
 
-async function loadRepoFixes() {
+async function loadRepoFixes() {  
   if (loaded.fixes) return;
   repoFixesLoading.set(true);
   repoFixesError.set(null);

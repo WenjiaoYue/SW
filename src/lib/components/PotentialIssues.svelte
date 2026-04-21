@@ -1,10 +1,14 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { potentialIssues, potentialIssuesLoading, potentialIssuesError } from '$lib/stores/appStore';
-  import { fetchGetReport } from '$lib/services/api';
+  import { fetchMarkData, postMarkData, type MarkDataRecord } from '$lib/services/api';
   import LoadingState from './LoadingState.svelte';
   import EmptyState from './EmptyState.svelte';
   import Pagination from './Pagination.svelte';
-  import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Info, FileText } from 'lucide-svelte';
+  import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Info, FileText, Tag, Loader as Loader2 } from 'lucide-svelte';
+
+  const TASK_NAME = 'report';
+  const LABEL_OPTIONS = ['false_positive', 'true_positive', 'needs_review', 'confirmed', 'wont_fix'];
 
   let selectedVerdict: string = 'All';
   let selectedCategory: string = 'All';
@@ -12,6 +16,11 @@
   let searchQuery: string = '';
   let currentPage = 1;
   let itemsPerPage = 10;
+
+  let markMap: Record<string, MarkDataRecord> = {};
+  let editingField: { id: string; field: 'label' | 'reason' } | null = null;
+  let editValue = '';
+  let savingId: string | null = null;
 
   $: availableVerdicts = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => i.verdict).filter(Boolean)))];
   $: availableCategories = ['All', ...Array.from(new Set($potentialIssues.map((i: any) => i.report_category).filter(Boolean)))];
@@ -29,24 +38,57 @@
   });
 
   $: totalItems = filtered.length;
-  $: totalPages = Math.ceil(totalItems / itemsPerPage);
   $: paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   function handleFilterChange() { currentPage = 1; }
   function handlePageChange(page: number) { currentPage = page; }
   function handleItemsPerPageChange(n: number) { itemsPerPage = n; currentPage = 1; }
 
-  async function reloadWithGoal(goal: string) {
-    potentialIssuesLoading.set(true);
-    potentialIssuesError.set(null);
+  onMount(async () => {
     try {
-      const req = goal === 'All' ? {} : { goal: Number(goal) as 2 | 3 };
-      const data = await fetchGetReport(req);
-      potentialIssues.set(data.data || []);
-    } catch (err: any) {
-      potentialIssuesError.set(err.message || 'Failed to load data');
-    } finally {
-      potentialIssuesLoading.set(false);
+      const res = await fetchMarkData({ task: TASK_NAME });
+      const map: Record<string, MarkDataRecord> = {};
+      for (const m of res.data) { map[m.id] = m; }
+      markMap = map;
+    } catch { /* silent */ }
+  });
+
+  function startEdit(entryId: string, field: 'label' | 'reason') {
+    const mark = markMap[entryId];
+    editingField = { id: entryId, field };
+    editValue = field === 'label' ? (mark?.label || '') : (mark?.reason || '');
+  }
+
+  async function commitEdit(entryId: string, field: 'label' | 'reason', value: string) {
+    editingField = null;
+    const mark = markMap[entryId];
+    const oldValue = field === 'label' ? (mark?.label || '') : (mark?.reason || '');
+    if (value === oldValue) return;
+
+    if (field === 'label' && !value) {
+      const { [entryId]: _, ...rest } = markMap;
+      markMap = rest;
+      return;
+    }
+
+    savingId = entryId;
+    try {
+      const label = field === 'label' ? value : (mark?.label || 'needs_review');
+      const reason = field === 'reason' ? value : (mark?.reason || undefined);
+      const res = await postMarkData({ id: entryId, label, reason, task: TASK_NAME });
+      if (res.data?.[0]) {
+        markMap = { ...markMap, [entryId]: res.data[0] };
+      }
+    } catch { /* silent */ }
+    savingId = null;
+  }
+
+  function handleKeydown(e: KeyboardEvent, entryId: string, field: 'label' | 'reason') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      commitEdit(entryId, field, editValue);
+    } else if (e.key === 'Escape') {
+      editingField = null;
     }
   }
 
@@ -55,6 +97,14 @@
     not_applicable: 'text-slate-600 bg-slate-50 border-slate-200',
     gap: 'text-red-700 bg-red-50 border-red-200',
     partial: 'text-yellow-700 bg-yellow-50 border-yellow-200',
+  };
+
+  const labelColors: Record<string, string> = {
+    false_positive: 'text-amber-700 bg-amber-50 border-amber-200',
+    true_positive: 'text-red-700 bg-red-50 border-red-200',
+    needs_review: 'text-blue-700 bg-blue-50 border-blue-200',
+    confirmed: 'text-green-700 bg-green-50 border-green-200',
+    wont_fix: 'text-slate-600 bg-slate-50 border-slate-200',
   };
 </script>
 
@@ -94,7 +144,7 @@
       <div class="space-y-4 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <div class="text-xs font-semibold text-slate-700 mb-1.5 block">Goal</div>
+            <div class="text-xs font-semibold text-slate-700 mb-1.5">Goal</div>
             <div class="flex flex-wrap gap-2">
               {#each availableGoals as g}
                 <button
@@ -114,7 +164,7 @@
           </div>
 
           <div>
-            <div class="text-xs font-semibold text-slate-700 mb-1.5 block">Verdict</div>
+            <div class="text-xs font-semibold text-slate-700 mb-1.5">Verdict</div>
             <div class="flex flex-wrap gap-2">
               {#each availableVerdicts as verdict}
                 <button
@@ -134,7 +184,7 @@
           </div>
 
           <div>
-            <div class="text-xs font-semibold text-slate-700 mb-1.5 block">Category</div>
+            <div class="text-xs font-semibold text-slate-700 mb-1.5">Category</div>
             <div class="flex flex-wrap gap-2">
               {#each availableCategories as cat}
                 <button
@@ -157,6 +207,7 @@
 
       <div class="space-y-3">
         {#each paginated as item}
+          {@const mark = markMap[item.entry_id]}
           <div class="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all bg-white">
             <div class="flex items-start justify-between gap-4 mb-3">
               <div class="flex-1 min-w-0">
@@ -232,6 +283,77 @@
                 <span class="font-medium text-slate-700">{item.verification_status}</span>
               </div>
             {/if}
+
+            <!-- Annotation row — always visible -->
+            <div class="mt-3 pt-3 border-t border-slate-100">
+              <div class="flex items-center gap-3 flex-wrap text-xs">
+                <Tag class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+
+                <!-- Label -->
+                <span class="text-slate-500 font-medium">Label:</span>
+                {#if editingField?.id === item.entry_id && editingField?.field === 'label'}
+                  <select
+                    class="px-2 py-1 text-xs border border-blue-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    bind:value={editValue}
+                    on:blur={() => commitEdit(item.entry_id, 'label', editValue)}
+                    on:change={() => commitEdit(item.entry_id, 'label', editValue)}
+                    autofocus
+                  >
+                    <option value="">not set</option>
+                    {#each LABEL_OPTIONS as opt}
+                      <option value={opt}>{opt.replace(/_/g, ' ')}</option>
+                    {/each}
+                  </select>
+                {:else}
+                  <!-- svelte-ignore a11y-no-static-element-interactions -->
+                  <span
+                    on:dblclick={() => startEdit(item.entry_id, 'label')}
+                    class="px-2 py-0.5 rounded-lg border cursor-pointer select-none hover:ring-2 hover:ring-blue-300 transition-all {mark?.label ? (labelColors[mark.label] || 'text-slate-600 bg-slate-50 border-slate-200') : 'text-slate-400 bg-slate-50 border-dashed border-slate-300 italic'}"
+                    title="Double-click to edit"
+                  >
+                    {mark?.label ? mark.label.replace(/_/g, ' ') : 'not set'}
+                  </span>
+                {/if}
+
+                <span class="text-slate-300">|</span>
+
+                <!-- Reason -->
+                <span class="text-slate-500 font-medium">Reason:</span>
+                {#if editingField?.id === item.entry_id && editingField?.field === 'reason'}
+                  <input
+                    type="text"
+                    class="flex-1 min-w-[120px] max-w-xs px-2 py-1 text-xs border border-blue-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    bind:value={editValue}
+                    on:blur={() => commitEdit(item.entry_id, 'reason', editValue)}
+                    on:keydown={(e) => handleKeydown(e, item.entry_id, 'reason')}
+                    placeholder="Enter reason..."
+                    autofocus
+                  />
+                {:else}
+                  <!-- svelte-ignore a11y-no-static-element-interactions -->
+                  <span
+                    on:dblclick={() => startEdit(item.entry_id, 'reason')}
+                    class="px-2 py-0.5 rounded-lg border cursor-pointer select-none hover:ring-2 hover:ring-blue-300 transition-all max-w-xs truncate {mark?.reason ? 'text-slate-700 bg-slate-50 border-slate-200' : 'text-slate-400 bg-slate-50 border-dashed border-slate-300 italic'}"
+                    title={mark?.reason || 'Double-click to edit'}
+                  >
+                    {mark?.reason || 'not set'}
+                  </span>
+                {/if}
+
+                <span class="text-slate-300">|</span>
+
+                <!-- Task (read-only display) -->
+                <span class="text-slate-500 font-medium">Task:</span>
+                <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
+                  {TASK_NAME}
+                </span>
+
+                <!-- Saving indicator -->
+                {#if savingId === item.entry_id}
+                  <Loader2 class="w-3.5 h-3.5 text-blue-500 animate-spin flex-shrink-0" />
+                {/if}
+              </div>
+            </div>
           </div>
         {/each}
       </div>

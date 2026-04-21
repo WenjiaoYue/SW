@@ -1,6 +1,6 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
-const SCAN_BASE = import.meta.env.VITE_SCAN_API_BASE_URL; 
+const SCAN_BASE = 'http://10.165.144.141:8000';
 const LICENSE_SYCL_BASE = 'http://10.219.77.7:8000';
 
 
@@ -80,6 +80,29 @@ export interface GetScanReportRecord {
   xpu_needs_fix_confidence: string | null; reason: string | null; risk: string | null;
   cuda_files: string[]; affected_xpu_files: string[];
   verification_status: string | null; auto_verifier: AutoVerifier | null;
+}
+
+export interface MarkDataRecord {
+  id: string; label: string; reason: string | null; task: string | null;
+  created_at: string; updated_at: string;
+}
+export interface GetMarkDataRequest { id?: string; label?: string; task?: string; }
+export interface PostMarkDataRequest { id: string; label: string; reason?: string; task?: string; }
+
+export async function fetchMarkData(req: GetMarkDataRequest = {}): Promise<ApiResponse<MarkDataRecord>> {
+  try {
+    return await request<ApiResponse<MarkDataRecord>>(withQuery(`${SCAN_BASE}/mark_data`, req), { method: 'GET' });
+  } catch (e) {
+    console.warn('mark_data GET failed');
+    return { data: [], total: 0 };
+  }
+}
+
+export async function postMarkData(body: PostMarkDataRequest): Promise<ApiResponse<MarkDataRecord>> {
+  return request<ApiResponse<MarkDataRecord>>(`${SCAN_BASE}/mark_data`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
 }
 
 export interface PotentialIssuesRequest { date?: string; page?: number; page_size?: number; }
